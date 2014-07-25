@@ -31,6 +31,8 @@ if ('development' === app.get('env')) {
 	
 }
 
+app.use(express.static(__dirname + '/'));
+
 var server = http.createServer(app);
 
 server.listen(app.get('port'), app.get('host'), function() {
@@ -45,6 +47,7 @@ server.listen(app.get('port'), app.get('host'), function() {
 var nodeUniqueId = '{'+app.get('host')+':'+app.get('port')+'}';
 
 var io = require('socket.io').listen(server);
+
 
 
 
