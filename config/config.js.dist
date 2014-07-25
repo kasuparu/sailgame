@@ -1,0 +1,14 @@
+var config = {};
+
+config.redis = {};
+config.web = {
+    'node': {}
+};
+config.api = {};
+
+config.loglevel = 'info';
+
+config.web.node.port = process.env.NODE_PORT || 3000;
+config.web.node.host = process.env.NODE_HOST || 'localhost';
+
+module.exports = config;
