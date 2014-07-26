@@ -31,7 +31,8 @@ if ('development' === app.get('env')) {
 	
 }
 
-app.use(express.static(__dirname + '/'));
+app.use('/phaser', express.static(__dirname + '/phaser'));
+app.use('/', express.static(__dirname + '/static'));
 
 var server = http.createServer(app);
 
