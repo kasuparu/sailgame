@@ -24,22 +24,62 @@ BasicGame.Game = function (game) {
 
 };
 
+var currentSpeed = 0;
+var cursors;
+
 BasicGame.Game.prototype = {
 
 	create: function () {
 
-		//	Honestly, just about anything could go here. It's YOUR game after all. Eat your heart out!
-		w2SummerTiles = this.game.add.sprite(0, 300, 'w2SummerTiles');
-		//waterframes = Phaser.Animation.generateFrameNames('', 328, 330).map(function (v) { return parseInt(v); }, []);
+		this.game.world.setBounds(-1000, -1000, 2000, 2000);
 		
-		w2SummerTiles.animations.add('waterRipple', Phaser.Math.numberArray(328, 330), true);
-		w2SummerTiles.animations.play('waterRipple', 3, true);
+		var waterBitmap = this.game.add.bitmapData(2000, 2000);
+
+		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, 2000, 2000);
+		waterGradient.addColorStop(0, "#0296A1");
+		waterGradient.addColorStop(1, "#014347");
+		waterBitmap.context.fillStyle = waterGradient;
+		waterBitmap.context.fillRect(0, 0, 2000, 2000);
+
+		water = this.game.add.sprite(-1000, -1000, waterBitmap);
+		
+		playerShip = this.game.add.sprite(0, 0, 'shipTemporary');
+		playerShip.anchor.setTo(0.5, 0.5);
+		playerShip.scale.x = playerShip.scale.y = 0.1;
+		
+		this.game.physics.enable(playerShip, Phaser.Physics.ARCADE);
+		playerShip.body.drag.set(0.4);
+		playerShip.body.maxVelocity.setTo(200, 200);
+		playerShip.body.collideWorldBounds = true;
+		
+		this.game.camera.follow(playerShip);
+		this.game.camera.focusOnXY(0, 0);
+		
+		cursors = this.game.input.keyboard.createCursorKeys();
 	},
 
 	update: function () {
 
-		//	Honestly, just about anything could go here. It's YOUR game after all. Eat your heart out!
+		if (cursors.left.isDown) {
+			playerShip.angle -= 1;
+		} else if (cursors.right.isDown) {
+			playerShip.angle += 1;
+		}
 
+		if (cursors.up.isDown) {
+			currentSpeed += 1;
+		} else if (cursors.down.isDown) {
+			currentSpeed -= 1;
+		}
+
+		if (currentSpeed != 0) {
+			this.game.physics.arcade.velocityFromRotation(playerShip.rotation, currentSpeed, playerShip.body.velocity);
+		}
+
+	},
+	
+	render: function () {
+		this.game.debug.text('currentSpeed: ' + playerShip.body.velocity, 32, 32);
 	},
 
 	quitGame: function (pointer) {
