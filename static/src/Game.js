@@ -31,17 +31,20 @@ BasicGame.Game.prototype = {
 
 	create: function () {
 
-		this.game.world.setBounds(-1000, -1000, 2000, 2000);
+		var worldSize  = 10000;
 		
-		var waterBitmap = this.game.add.bitmapData(2000, 2000);
+		this.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
+		
+		var waterBitmapSize = 128;
+		var waterBitmap = this.game.add.bitmapData(waterBitmapSize, waterBitmapSize);
 
-		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, 2000, 2000);
+		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, waterBitmapSize, waterBitmapSize);
 		waterGradient.addColorStop(0, "#0296A1");
 		waterGradient.addColorStop(1, "#014347");
 		waterBitmap.context.fillStyle = waterGradient;
-		waterBitmap.context.fillRect(0, 0, 2000, 2000);
+		waterBitmap.context.fillRect(0, 0, waterBitmapSize, waterBitmapSize);
 
-		water = this.game.add.sprite(-1000, -1000, waterBitmap);
+		water = this.game.add.tileSprite(-worldSize/2, -worldSize/2, worldSize, worldSize, waterBitmap);
 		
 		playerShip = this.game.add.sprite(0, 0, 'shipTemporary');
 		playerShip.anchor.setTo(0.5, 0.5);
