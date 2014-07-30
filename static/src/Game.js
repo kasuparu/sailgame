@@ -26,6 +26,17 @@ BasicGame.Game = function (game) {
 
 var currentSpeed = 0;
 var cursors;
+var windSpeed = 8;
+
+var windVector = function (positionPoint) {
+	var windVector = new Phaser.Point(-positionPoint.x, -positionPoint.y);
+	var magnitude = windVector.getMagnitude();
+	
+	if (magnitude) {
+		windVector = windVector.multiply(windSpeed/magnitude, windSpeed/magnitude);
+	}
+	return windVector;
+}
 
 BasicGame.Game.prototype = {
 
@@ -39,8 +50,11 @@ BasicGame.Game.prototype = {
 		var waterBitmap = this.game.add.bitmapData(waterBitmapSize, waterBitmapSize);
 
 		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, waterBitmapSize, waterBitmapSize);
-		waterGradient.addColorStop(0, "#0296A1");
-		waterGradient.addColorStop(1, "#014347");
+		waterGradient.addColorStop(0, "#0296A1"); // Light
+		waterGradient.addColorStop(0.25, "#014347"); // Dark
+		waterGradient.addColorStop(0.5, "#0296A1"); // Light
+		waterGradient.addColorStop(0.75, "#014347"); // Dark
+		waterGradient.addColorStop(1, "#0296A1"); // Light
 		waterBitmap.context.fillStyle = waterGradient;
 		waterBitmap.context.fillRect(0, 0, waterBitmapSize, waterBitmapSize);
 
@@ -51,7 +65,7 @@ BasicGame.Game.prototype = {
 		playerShip.scale.x = playerShip.scale.y = 0.1;
 		
 		this.game.physics.enable(playerShip, Phaser.Physics.ARCADE);
-		playerShip.body.drag.set(0.4);
+		playerShip.body.drag.set(0.5);
 		playerShip.body.maxVelocity.setTo(200, 200);
 		playerShip.body.collideWorldBounds = true;
 		
@@ -82,7 +96,9 @@ BasicGame.Game.prototype = {
 	},
 	
 	render: function () {
+		this.game.debug.text('coordinates: ' + playerShip.body.position, 32, 16);
 		this.game.debug.text('currentSpeed: ' + playerShip.body.velocity, 32, 32);
+		this.game.debug.text('windSpeed: ' + windVector(playerShip.body.position), 32, 48);
 	},
 
 	quitGame: function (pointer) {
