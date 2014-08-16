@@ -96,9 +96,19 @@ BasicGame.Game.prototype = {
 	},
 	
 	render: function () {
-		this.game.debug.text('coordinates: ' + playerShip.body.position, 32, 16);
-		this.game.debug.text('currentSpeed: ' + playerShip.body.velocity, 32, 32);
-		this.game.debug.text('windSpeed: ' + windVector(playerShip.body.position), 32, 48);
+		var debugObj = {
+			'position': playerShip.body.position,
+			'velocity': playerShip.body.velocity,
+			'rotation': playerShip.rotation,
+			'windVector': windVector(playerShip.body.position),
+			//'shipWindAngle': Phaser.Point().angle(playerShip.rotation, windVector(playerShip.body.position))
+		};
+		
+		var count = 0;
+		
+		for (var debugKey in debugObj) {
+			this.game.debug.text(debugKey + ': ' + debugObj[debugKey], 32, ++count * 16);
+		}
 	},
 
 	quitGame: function (pointer) {
