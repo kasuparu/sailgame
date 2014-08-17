@@ -65,7 +65,7 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 	if (Math.abs(shipWindAngle) > 135) {
 		// Reverse direction
 		result = -result;
-		windCase = 'rear';
+		windCase = 'front';
 	} else if (Math.abs(shipWindAngle) > 45) {
 		// Side direction
 		result = result - 90 * shipWindAngle / Math.abs(shipWindAngle);
