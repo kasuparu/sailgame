@@ -38,6 +38,47 @@ var windVector = function (positionPoint) {
 	return windVector;
 }
 
+var rotationVector = function (rotation) {
+	return new Phaser.Point(Math.cos(rotation), Math.sin(rotation));
+}
+
+var angle = function (a, b, asDegrees) {
+	if (typeof asDegrees === 'undefined') {
+		asDegrees = false;
+	}
+	
+	var result = ((180 + 360 + (a.angle(new Phaser.Point(0, 0), 'asDegrees') - b.angle(new Phaser.Point(0, 0), 'asDegrees'))) % 360) - 180;
+
+	if (asDegrees) {
+		return result;
+	} else {
+		return Phaser.Math.degToRad(result);
+	}
+}
+
+var sailRotation = function (shipVector, windVector, asDegrees) {
+	var shipWindAngle = angle(shipVector, windVector, 'asDegrees');
+	
+	var result = windVector.angle(new Phaser.Point(0, 0), true);
+	var windCase = 'rear';
+	
+	if (Math.abs(shipWindAngle) > 135) {
+		// Reverse direction
+		result = -result;
+		windCase = 'rear';
+	} else if (Math.abs(shipWindAngle) > 45) {
+		// Side direction
+		result = result - 90 * shipWindAngle / Math.abs(shipWindAngle);
+		windCase = 'side';
+	}
+	
+	//if (asDegrees) {
+		return result + ' ' + windCase;
+	//} else {
+	//	return Phaser.Math.degToRad(result);
+	//}
+}
+
 BasicGame.Game.prototype = {
 
 	create: function () {
@@ -63,6 +104,8 @@ BasicGame.Game.prototype = {
 		playerShip = this.game.add.sprite(0, 0, 'shipTemporary');
 		playerShip.anchor.setTo(0.5, 0.5);
 		playerShip.scale.x = playerShip.scale.y = 0.1;
+		
+		// TODO Draw sail
 		
 		this.game.physics.enable(playerShip, Phaser.Physics.ARCADE);
 		playerShip.body.drag.set(0.5);
@@ -100,8 +143,10 @@ BasicGame.Game.prototype = {
 			'position': playerShip.body.position,
 			'velocity': playerShip.body.velocity,
 			'rotation': playerShip.rotation,
+			'rotationVector': rotationVector(playerShip.rotation),
 			'windVector': windVector(playerShip.body.position),
-			//'shipWindAngle': Phaser.Point().angle(playerShip.rotation, windVector(playerShip.body.position))
+			'shipWindAngle': angle(rotationVector(playerShip.rotation), windVector(playerShip.body.position)),
+			'sailRotation': sailRotation(rotationVector(playerShip.rotation), windVector(playerShip.body.position)),
 		};
 		
 		var count = 0;
