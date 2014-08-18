@@ -166,6 +166,8 @@ BasicGame.Game.prototype = {
 		for (var debugKey in debugObj) {
 			this.game.debug.text(debugKey + ': ' + debugObj[debugKey], 32, ++count * 16);
 		}
+		
+		//this.game.debug.spriteInfo(sail1, 320, 32);
 	},
 
 	quitGame: function (pointer) {
