@@ -106,6 +106,9 @@ BasicGame.Game.prototype = {
 		playerShip.scale.x = playerShip.scale.y = 0.1;
 		
 		// TODO Draw sail
+		sail1 = this.game.add.sprite(0, 0, 'sailTemporary');
+		sail1.anchor.set(0.3, 0.5);
+		//sail1.scale.x = playerShip.sail1.scale.y = 0.1;
 		
 		this.game.physics.enable(playerShip, Phaser.Physics.ARCADE);
 		playerShip.body.drag.set(0.5);
@@ -116,6 +119,9 @@ BasicGame.Game.prototype = {
 		this.game.camera.focusOnXY(0, 0);
 		
 		cursors = this.game.input.keyboard.createCursorKeys();
+		
+		playerShip.bringToTop();
+		sail1.bringToTop();
 	},
 
 	update: function () {
@@ -135,6 +141,11 @@ BasicGame.Game.prototype = {
 		if (currentSpeed != 0) {
 			this.game.physics.arcade.velocityFromRotation(playerShip.rotation, currentSpeed, playerShip.body.velocity);
 		}
+		
+		sail1.x = playerShip.x;
+		sail1.y = playerShip.y;
+		
+		sail1.rotation = sailRotation(rotationVector(playerShip.rotation), windVector(playerShip.body.position));
 
 	},
 	
@@ -146,7 +157,8 @@ BasicGame.Game.prototype = {
 			'rotationVector': rotationVector(playerShip.rotation),
 			'windVector': windVector(playerShip.body.position),
 			'shipWindAngle': angle(rotationVector(playerShip.rotation), windVector(playerShip.body.position)),
-			'sailRotation': sailRotation(rotationVector(playerShip.rotation), windVector(playerShip.body.position)),
+			'sailRotation': sail1.rotation, //sailRotation(rotationVector(playerShip.rotation), windVector(playerShip.body.position)),
+			'sail': sail1.x,
 		};
 		
 		var count = 0;

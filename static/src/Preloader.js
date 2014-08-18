@@ -30,6 +30,7 @@ BasicGame.Preloader.prototype = {
 		//this.load.bitmapFont('caslon', 'fonts/caslon.png', 'fonts/caslon.xml');
 		this.load.spritesheet('w2SummerTiles', 'assets/Warcraft II - Summer Tiles.png', 32, 32, 380);
 		this.load.image('shipTemporary', 'assets/Ship (temporary).png');
+		this.load.image('sailTemporary', 'assets/sail (temporary).png');
 		// TODO Make this an atlas to be able to tile?
 		
 		//	+ lots of other required assets here
