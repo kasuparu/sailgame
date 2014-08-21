@@ -55,14 +55,20 @@ var angle = function (a, b, asDegrees) {
 		asDegrees = false;
 	}
 	
-	var result = ((720 + (a.angle(new Phaser.Point(0, 0), 'asDegrees') - b.angle(new Phaser.Point(0, 0), 'asDegrees'))) % 360) - 180;
-
+	var result = 0;
+	
+	if (!a.isZero() && !b.isZero()) {
+		result = (b.angle(new Phaser.Point(0, 0), 'asDegrees') - a.angle(new Phaser.Point(0, 0), 'asDegrees'));
+		
+		// TODO Limit result from [-180; 180]
+	}
+	
 	if (asDegrees) {
 		return result;
 	} else {
 		return Phaser.Math.degToRad(result);
 	}
-};
+}
 
 var windSailCase = function (shipVector, windVector) {
 	var shipWindAngle = angle(shipVector, windVector, 'asDegrees');
@@ -186,9 +192,10 @@ BasicGame.Game.prototype = {
 			//'velocity': playerShip.body.velocity,
 			'rotation': playerShip.rotation,
 			//'rotationVector': rotationVector(playerShip.rotation),
+			'rotation': playerShip.rotation,
 			//'windVector': windVector(playerShip.body.position),
 			'windRotation': windRotation(playerShip.body.position),
-			'shipWindAngle': angle(rotationVector(playerShip.rotation), windVector(playerShip.body.position)),
+			'shipWindAngle': angle(rotationVector(playerShip.rotation), windVector(playerShip.body.position), 'asDegrees'),
 			'windCase': windSailCase(rotationVector(playerShip.rotation), windVector(playerShip.body.position)),
 		};
 		
