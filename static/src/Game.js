@@ -32,22 +32,36 @@ var sailShift = -5;
 var guiWindLine = null;
 var guiShipLine = null;
 var guiSailLine = null;
+var sailMaxTurnAngle = 60;
 
 var windRotation = function (positionPoint) {
 	var windVector = new Phaser.Point(-positionPoint.x, -positionPoint.y);
 
-	return windVector.angle(new Phaser.Point(0, 0));
+	return vectorToRotation(windVector);
 };
 
 var getWindVector = function (positionPoint) {
-	return new Phaser.Point(positionPoint.x, positionPoint.y)
-		.normalize()
-		.multiply(-windSpeed, -windSpeed);
+	return rotationToVector(windRotation(positionPoint))
+		.multiply(windSpeed, windSpeed);
 };
 
 var rotationToVector = function (rotation) {
 	return new Phaser.Point(Math.cos(rotation), Math.sin(rotation));
 };
+
+var vectorToRotation = function (vector, asDegrees) {
+	return new Phaser.Point(0, 0).angle(vector, asDegrees);
+}
+
+var normalizeRotation = function (rotation) {
+	var result = rotation;
+	
+	while (Math.abs(result) > 180) {
+		result -= result / Math.abs(result) * 360;
+	}
+		
+	return result;
+}
 
 var angle = function (a, b, asDegrees) {
 	if (typeof asDegrees === 'undefined') {
@@ -57,11 +71,9 @@ var angle = function (a, b, asDegrees) {
 	var result = 0;
 	
 	if (!a.isZero() && !b.isZero()) {
-		result = (b.angle(new Phaser.Point(0, 0), 'asDegrees') - a.angle(new Phaser.Point(0, 0), 'asDegrees'));
+		result = vectorToRotation(b, 'asDegrees') - vectorToRotation(a, 'asDegrees');
 		
-		while (Math.abs(result) > 180) {
-			result -= Math.sign(result) * 360;
-		}
+		result = normalizeRotation(result);
 	}
 	
 	if (asDegrees) {
@@ -76,9 +88,9 @@ var windSailCase = function (shipVector, windVector) {
 	
 	var result = 'rear';
 	
-	if (Math.abs(shipWindAngle) > 135) {
+	if (Math.abs(shipWindAngle) > (180 - sailMaxTurnAngle)) {
 		result = 'front';
-	} else if (Math.abs(shipWindAngle) > 45) {
+	} else if (Math.abs(shipWindAngle) > sailMaxTurnAngle) {
 		result = 'side';
 	}
 	
@@ -88,18 +100,28 @@ var windSailCase = function (shipVector, windVector) {
 var sailRotation = function (shipVector, windVector, asDegrees) {
 	var shipWindAngle = angle(shipVector, windVector, 'asDegrees');
 	
-	var result = windVector.angle(new Phaser.Point(0, 0), true);
+	var result = vectorToRotation(windVector, 'asDegrees');
 	
 	var windCase = windSailCase(shipVector, windVector);
 	
 	switch (windCase) {
 		case 'front':
-			result = -result;
+			result = vectorToRotation(shipVector, 'asDegrees') - (180 - sailMaxTurnAngle) * shipWindAngle / Math.abs(shipWindAngle);
 			break;
 		case 'side':
-			result = result + 90 * shipWindAngle / Math.abs(shipWindAngle);
+			result = result - 90 * shipWindAngle / Math.abs(shipWindAngle);
 			break;
 	}
+	
+	result = normalizeRotation(result);
+	
+	var sailWindAngle = result - vectorToRotation(windVector, 'asDegrees');
+	
+	if (Math.abs(sailWindAngle) > 90) {
+		result = result + 180;
+	}
+	
+	result = normalizeRotation(result);
 	
 	if (asDegrees) {
 		return result;
@@ -203,7 +225,8 @@ BasicGame.Game.prototype = {
 			'windAngle': windRotation(playerShip.body.position) / Math.PI * 180,
 			'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
 			'sailAngle': playerSail1.rotation / Math.PI * 180,
-			'shipSailAngle': angle(shipVector, windVector, 'asDegrees'),
+			'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
+			'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
 			'windCase': windSailCase(shipVector, windVector),
 		};
 		
@@ -222,15 +245,13 @@ BasicGame.Game.prototype = {
 			playerShip.body.position.x + 300 + shipVector.normalize().x * 40,
 			playerShip.body.position.y + 300 + shipVector.normalize().y * 40
 		);
-		this.game.debug.geom(guiShipLine, 'rgba(0,255,0,1)');
 		
 		guiWindLine.setTo(
 			playerShip.body.position.x + 300,
 			playerShip.body.position.y + 300,
-			playerShip.body.position.x + 300 + windVector.x * 4,
-			playerShip.body.position.y + 300 + windVector.y * 4
+			playerShip.body.position.x + 300 + windVector.x * 3,
+			playerShip.body.position.y + 300 + windVector.y * 3
 		);
-		this.game.debug.geom(guiWindLine, 'rgba(128,128,255,1)');
 		
 		guiSailLine.setTo(
 			playerShip.body.position.x + 300,
@@ -238,7 +259,10 @@ BasicGame.Game.prototype = {
 			playerShip.body.position.x + 300 + sailVector.x * 40,
 			playerShip.body.position.y + 300 + sailVector.y * 40
 		);
-		this.game.debug.geom(guiSailLine, 'rgba(255,255,255,1)');
+		
+		this.game.debug.geom(guiShipLine, 'rgba(0,255,0,1)');
+		this.game.debug.geom(guiSailLine, 'rgba(255,255,255,0.5)');
+		this.game.debug.geom(guiWindLine, 'rgba(128,128,255,1)');
 		
 		this.game.debug.pixel(512 + 300 - 425/2*0.1, 384 + 300 - 150/2*0.1, 'rgba(255,255,255,1)');
 	},
