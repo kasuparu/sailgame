@@ -29,6 +29,9 @@ var cursors;
 var windSpeed = 8;
 var sailStep = 5;
 var sailShift = -5;
+var guiWindLine = null;
+var guiShipLine = null;
+var guiSailLine = null;
 
 var windRotation = function (positionPoint) {
 	var windVector = new Phaser.Point(-positionPoint.x, -positionPoint.y);
@@ -147,6 +150,10 @@ BasicGame.Game.prototype = {
 		this.game.camera.follow(playerShip);
 		this.game.camera.focusOnXY(0, 0);
 		
+		guiWindLine = new Phaser.Line(0, 0, 0, 0);
+		guiShipLine = new Phaser.Line(0, 0, 0, 0);
+		guiSailLine = new Phaser.Line(0, 0, 0, 0);
+		
 		cursors = this.game.input.keyboard.createCursorKeys();
 		
 		playerShip.bringToTop();
@@ -187,6 +194,7 @@ BasicGame.Game.prototype = {
 	render: function () {
 		var shipVector = rotationToVector(playerShip.rotation);
 		var windVector = getWindVector(playerShip.body.position);
+		var sailVector = rotationToVector(playerSail1.rotation);
 		
 		var debugObj = {
 			//'position': playerShip.body.position,
@@ -207,6 +215,32 @@ BasicGame.Game.prototype = {
 		
 		//this.game.debug.spriteInfo(playerSail1, 32, 700);
 		//this.game.debug.spriteInfo(playerSail2, 700, 700);
+		
+		guiShipLine.setTo(
+			playerShip.body.position.x + 300,
+			playerShip.body.position.y + 300,
+			playerShip.body.position.x + 300 + shipVector.normalize().x * 40,
+			playerShip.body.position.y + 300 + shipVector.normalize().y * 40
+		);
+		this.game.debug.geom(guiShipLine, 'rgba(0,255,0,1)');
+		
+		guiWindLine.setTo(
+			playerShip.body.position.x + 300,
+			playerShip.body.position.y + 300,
+			playerShip.body.position.x + 300 + windVector.x * 4,
+			playerShip.body.position.y + 300 + windVector.y * 4
+		);
+		this.game.debug.geom(guiWindLine, 'rgba(128,128,255,1)');
+		
+		guiSailLine.setTo(
+			playerShip.body.position.x + 300,
+			playerShip.body.position.y + 300,
+			playerShip.body.position.x + 300 + sailVector.x * 40,
+			playerShip.body.position.y + 300 + sailVector.y * 40
+		);
+		this.game.debug.geom(guiSailLine, 'rgba(255,255,255,1)');
+		
+		this.game.debug.pixel(512 + 300 - 425/2*0.1, 384 + 300 - 150/2*0.1, 'rgba(255,255,255,1)');
 	},
 
 	quitGame: function (pointer) {
