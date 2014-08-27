@@ -18,6 +18,8 @@ BasicGame.Game = function (game) {
     this.particles;	//	the particle manager
     this.physics;	//	the physics manager
     this.rnd;		//	the repeatable random number generator
+	
+	this.cursors;
 
     //	You can use any of these from any function within this State.
     //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
@@ -25,13 +27,37 @@ BasicGame.Game = function (game) {
 };
 
 var currentSpeed = 0;
-var cursors;
 var windSpeed = 8;
 var sailStep = 5;
 var sailShift = -5;
 var guiWindLine = null;
 var guiShipLine = null;
 var guiSailLine = null;
+
+Ship = function (id, game) {
+	this.id = id;
+	
+	this.shipBody = game.add.sprite(0, 0, 'shipTemporary');
+	this.shipBody.anchor.setTo(0.5, 0.5);
+	this.shipBody.scale.x = this.shipBody.scale.y = 0.1;
+	
+	this.sail1 = game.add.sprite(0, 0, 'sailTemporary');
+	this.sail1.anchor.setTo(0.5, 0.5);
+	this.sail1.scale.x = this.sail1.scale.y = 0.07;
+	
+	this.sail2 = game.add.sprite(0, 0, 'sailTemporary');
+	this.sail2.anchor.setTo(0.5, 0.5);
+	this.sail2.scale.x = this.sail2.scale.y = 0.09;
+	
+	game.physics.enable(this.shipBody, Phaser.Physics.ARCADE);
+	this.shipBody.body.drag.set(0.5);
+	this.shipBody.body.maxVelocity.setTo(200, 200);
+	this.shipBody.body.collideWorldBounds = true;
+};
+
+Ship.prototype.update = function () {
+	
+};
 
 var windRotation = function (positionPoint) {
 	var windVector = new Phaser.Point(-positionPoint.x, -positionPoint.y);
@@ -130,79 +156,81 @@ BasicGame.Game.prototype = {
 
 		water = this.game.add.tileSprite(-worldSize/2, -worldSize/2, worldSize, worldSize, waterBitmap);
 		
-		playerShip = this.game.add.sprite(0, 0, 'shipTemporary');
+		/*playerShip = this.game.add.sprite(0, 0, 'shipTemporary');
 		playerShip.anchor.setTo(0.5, 0.5);
-		playerShip.scale.x = playerShip.scale.y = 0.1;
+		playerShip.scale.x = playerShip.scale.y = 0.1;*/
 		
-		playerSail1 = this.game.add.sprite(0, 0, 'sailTemporary');
+		/*playerSail1 = this.game.add.sprite(0, 0, 'sailTemporary');
 		playerSail1.anchor.setTo(0.5, 0.5);
-		playerSail1.scale.x = playerSail1.scale.y = 0.07;
+		playerSail1.scale.x = playerSail1.scale.y = 0.07;*/
 		
-		playerSail2 = this.game.add.sprite(0, 0, 'sailTemporary');
+		/*playerSail2 = this.game.add.sprite(0, 0, 'sailTemporary');
 		playerSail2.anchor.setTo(0.5, 0.5);
-		playerSail2.scale.x = playerSail2.scale.y = 0.09;
+		playerSail2.scale.x = playerSail2.scale.y = 0.09;*/
 		
-		this.game.physics.enable(playerShip, Phaser.Physics.ARCADE);
+		/*this.game.physics.enable(playerShip, Phaser.Physics.ARCADE);
 		playerShip.body.drag.set(0.5);
 		playerShip.body.maxVelocity.setTo(200, 200);
-		playerShip.body.collideWorldBounds = true;
+		playerShip.body.collideWorldBounds = true;*/
 		
-		this.game.camera.follow(playerShip);
+		playerShip = new Ship(0, this.game);
+		
+		this.game.camera.follow(playerShip.shipBody);
 		this.game.camera.focusOnXY(0, 0);
 		
 		guiWindLine = new Phaser.Line(0, 0, 0, 0);
 		guiShipLine = new Phaser.Line(0, 0, 0, 0);
 		guiSailLine = new Phaser.Line(0, 0, 0, 0);
 		
-		cursors = this.game.input.keyboard.createCursorKeys();
+		this.cursors = this.game.input.keyboard.createCursorKeys();
 		
-		playerShip.bringToTop();
-		playerSail1.bringToTop();
-		playerSail2.bringToTop();
+		playerShip.shipBody.bringToTop();
+		playerShip.sail1.bringToTop();
+		playerShip.sail2.bringToTop();
 	},
 
 	update: function () {
 
-		if (cursors.left.isDown) {
-			playerShip.angle -= 1;
-		} else if (cursors.right.isDown) {
-			playerShip.angle += 1;
+		if (this.cursors.left.isDown) {
+			playerShip.shipBody.angle -= 1;
+		} else if (this.cursors.right.isDown) {
+			playerShip.shipBody.angle += 1;
 		}
 
-		if (cursors.up.isDown) {
+		if (this.cursors.up.isDown) {
 			currentSpeed += 1;
-		} else if (cursors.down.isDown) {
+		} else if (this.cursors.down.isDown) {
 			currentSpeed -= 1;
 		}
 
 		if (currentSpeed != 0) {
-			this.game.physics.arcade.velocityFromRotation(playerShip.rotation, currentSpeed, playerShip.body.velocity);
+			this.game.physics.arcade.velocityFromRotation(playerShip.shipBody.rotation, currentSpeed, playerShip.shipBody.body.velocity);
 		}
 		
-		playerSail1.x = playerShip.x + Math.cos(playerShip.rotation) * (sailStep + sailShift);
-		playerSail1.y = playerShip.y + Math.sin(playerShip.rotation) * (sailStep + sailShift);
+		playerShip.sail1.x = playerShip.shipBody.x + Math.cos(playerShip.shipBody.rotation) * (sailStep + sailShift);
+		playerShip.sail1.y = playerShip.shipBody.y + Math.sin(playerShip.shipBody.rotation) * (sailStep + sailShift);
 		
-		playerSail1.rotation = sailRotation(rotationToVector(playerShip.rotation), getWindVector(playerShip.body.position));
+		playerShip.sail1.rotation = sailRotation(rotationToVector(playerShip.shipBody.rotation), getWindVector(playerShip.shipBody.body.position));
 		
-		playerSail2.x = playerShip.x + Math.cos(playerShip.rotation) * (-sailStep + sailShift);
-		playerSail2.y = playerShip.y + Math.sin(playerShip.rotation) * (-sailStep + sailShift);
+		playerShip.sail2.x = playerShip.shipBody.x + Math.cos(playerShip.shipBody.rotation) * (-sailStep + sailShift);
+		playerShip.sail2.y = playerShip.shipBody.y + Math.sin(playerShip.shipBody.rotation) * (-sailStep + sailShift);
 		
-		playerSail2.rotation = sailRotation(rotationToVector(playerShip.rotation), getWindVector(playerShip.body.position));
+		playerShip.sail2.rotation = sailRotation(rotationToVector(playerShip.shipBody.rotation), getWindVector(playerShip.shipBody.body.position));
 
 	},
 	
 	render: function () {
-		var shipVector = rotationToVector(playerShip.rotation);
-		var windVector = getWindVector(playerShip.body.position);
-		var sailVector = rotationToVector(playerSail1.rotation);
+		var shipVector = rotationToVector(playerShip.shipBody.rotation);
+		var windVector = getWindVector(playerShip.shipBody.body.position);
+		var sailVector = rotationToVector(playerShip.sail1.rotation);
 		
 		var debugObj = {
 			//'position': playerShip.body.position,
 			//'velocity': playerShip.body.velocity,
-			'shipAngle': playerShip.rotation / Math.PI * 180,
-			'windAngle': windRotation(playerShip.body.position) / Math.PI * 180,
+			'shipAngle': playerShip.shipBody.rotation / Math.PI * 180,
+			'windAngle': windRotation(playerShip.shipBody.body.position) / Math.PI * 180,
 			'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
-			'sailAngle': playerSail1.rotation / Math.PI * 180,
+			'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
 			'shipSailAngle': angle(shipVector, windVector, 'asDegrees'),
 			'windCase': windSailCase(shipVector, windVector),
 		};
@@ -217,26 +245,26 @@ BasicGame.Game.prototype = {
 		//this.game.debug.spriteInfo(playerSail2, 700, 700);
 		
 		guiShipLine.setTo(
-			playerShip.body.position.x + 300,
-			playerShip.body.position.y + 300,
-			playerShip.body.position.x + 300 + shipVector.normalize().x * 40,
-			playerShip.body.position.y + 300 + shipVector.normalize().y * 40
+			playerShip.shipBody.body.position.x + 300,
+			playerShip.shipBody.body.position.y + 300,
+			playerShip.shipBody.body.position.x + 300 + shipVector.normalize().x * 40,
+			playerShip.shipBody.body.position.y + 300 + shipVector.normalize().y * 40
 		);
 		this.game.debug.geom(guiShipLine, 'rgba(0,255,0,1)');
 		
 		guiWindLine.setTo(
-			playerShip.body.position.x + 300,
-			playerShip.body.position.y + 300,
-			playerShip.body.position.x + 300 + windVector.x * 4,
-			playerShip.body.position.y + 300 + windVector.y * 4
+			playerShip.shipBody.body.position.x + 300,
+			playerShip.shipBody.body.position.y + 300,
+			playerShip.shipBody.body.position.x + 300 + windVector.x * 4,
+			playerShip.shipBody.body.position.y + 300 + windVector.y * 4
 		);
 		this.game.debug.geom(guiWindLine, 'rgba(128,128,255,1)');
 		
 		guiSailLine.setTo(
-			playerShip.body.position.x + 300,
-			playerShip.body.position.y + 300,
-			playerShip.body.position.x + 300 + sailVector.x * 40,
-			playerShip.body.position.y + 300 + sailVector.y * 40
+			playerShip.shipBody.body.position.x + 300,
+			playerShip.shipBody.body.position.y + 300,
+			playerShip.shipBody.body.position.x + 300 + sailVector.x * 40,
+			playerShip.shipBody.body.position.y + 300 + sailVector.y * 40
 		);
 		this.game.debug.geom(guiSailLine, 'rgba(255,255,255,1)');
 		
