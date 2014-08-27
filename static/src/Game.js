@@ -26,54 +26,104 @@ BasicGame.Game = function (game) {
 
 };
 
-var currentSpeed = 0;
 var windSpeed = 8;
 var sailStep = 5;
 var sailShift = -5;
 var guiWindLine = null;
 var guiShipLine = null;
 var guiSailLine = null;
+var sailMaxTurnAngle = 60;
 
-Ship = function (id, game) {
+Ship = function (id, game, x, y) {
+	x = x || 0;
+	y = y || 0;
+	
 	this.id = id;
 	
-	this.shipBody = game.add.sprite(0, 0, 'shipTemporary');
+	this.game = game;
+	
+	this.shipBody = game.add.sprite(x, y, 'shipTemporary');
 	this.shipBody.anchor.setTo(0.5, 0.5);
 	this.shipBody.scale.x = this.shipBody.scale.y = 0.1;
 	
-	this.sail1 = game.add.sprite(0, 0, 'sailTemporary');
+	this.sail1 = game.add.sprite(x, y, 'sailTemporary');
 	this.sail1.anchor.setTo(0.5, 0.5);
 	this.sail1.scale.x = this.sail1.scale.y = 0.07;
 	
-	this.sail2 = game.add.sprite(0, 0, 'sailTemporary');
+	this.sail2 = game.add.sprite(x, y, 'sailTemporary');
 	this.sail2.anchor.setTo(0.5, 0.5);
 	this.sail2.scale.x = this.sail2.scale.y = 0.09;
 	
-	game.physics.enable(this.shipBody, Phaser.Physics.ARCADE);
+	this.game.physics.enable(this.shipBody, Phaser.Physics.ARCADE);
 	this.shipBody.body.drag.set(0.5);
 	this.shipBody.body.maxVelocity.setTo(200, 200);
 	this.shipBody.body.collideWorldBounds = true;
+	
+	this.currentSpeed = 0;
+	
+	this.shipBody.bringToTop();
+	this.sail1.bringToTop();
+	this.sail2.bringToTop();
 };
 
-Ship.prototype.update = function () {
+Ship.prototype.update = function (cursors) {
+	if (typeof cursors !== 'undefined') {
+		if (cursors.left.isDown) {
+			this.shipBody.angle -= 1;
+		} else if (cursors.right.isDown) {
+			this.shipBody.angle += 1;
+		}
+
+		if (cursors.up.isDown) {
+			this.currentSpeed += 1;
+		} else if (cursors.down.isDown) {
+			this.currentSpeed -= 1;
+		}
+	}
+
+	if (this.currentSpeed != 0) {
+		this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
+	}
 	
+	this.sail1.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (sailStep + sailShift);
+	this.sail1.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (sailStep + sailShift);
+	
+	this.sail1.rotation = sailRotation(rotationToVector(this.shipBody.rotation), getWindVector(this.shipBody.body.position));
+	
+	this.sail2.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (-sailStep + sailShift);
+	this.sail2.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (-sailStep + sailShift);
+	
+	this.sail2.rotation = sailRotation(rotationToVector(this.shipBody.rotation), getWindVector(this.shipBody.body.position));
 };
 
 var windRotation = function (positionPoint) {
 	var windVector = new Phaser.Point(-positionPoint.x, -positionPoint.y);
 
-	return windVector.angle(new Phaser.Point(0, 0));
+	return vectorToRotation(windVector);
 };
 
 var getWindVector = function (positionPoint) {
-	return new Phaser.Point(positionPoint.x, positionPoint.y)
-		.normalize()
-		.multiply(-windSpeed, -windSpeed);
+	return rotationToVector(windRotation(positionPoint))
+		.multiply(windSpeed, windSpeed);
 };
 
 var rotationToVector = function (rotation) {
 	return new Phaser.Point(Math.cos(rotation), Math.sin(rotation));
 };
+
+var vectorToRotation = function (vector, asDegrees) {
+	return new Phaser.Point(0, 0).angle(vector, asDegrees);
+}
+
+var normalizeRotation = function (rotation) {
+	var result = rotation;
+	
+	while (Math.abs(result) > 180) {
+		result -= result / Math.abs(result) * 360;
+	}
+		
+	return result;
+}
 
 var angle = function (a, b, asDegrees) {
 	if (typeof asDegrees === 'undefined') {
@@ -83,11 +133,9 @@ var angle = function (a, b, asDegrees) {
 	var result = 0;
 	
 	if (!a.isZero() && !b.isZero()) {
-		result = (b.angle(new Phaser.Point(0, 0), 'asDegrees') - a.angle(new Phaser.Point(0, 0), 'asDegrees'));
+		result = vectorToRotation(b, 'asDegrees') - vectorToRotation(a, 'asDegrees');
 		
-		while (Math.abs(result) > 180) {
-			result -= Math.sign(result) * 360;
-		}
+		result = normalizeRotation(result);
 	}
 	
 	if (asDegrees) {
@@ -102,9 +150,9 @@ var windSailCase = function (shipVector, windVector) {
 	
 	var result = 'rear';
 	
-	if (Math.abs(shipWindAngle) > 135) {
+	if (Math.abs(shipWindAngle) > (180 - sailMaxTurnAngle)) {
 		result = 'front';
-	} else if (Math.abs(shipWindAngle) > 45) {
+	} else if (Math.abs(shipWindAngle) > sailMaxTurnAngle) {
 		result = 'side';
 	}
 	
@@ -114,18 +162,28 @@ var windSailCase = function (shipVector, windVector) {
 var sailRotation = function (shipVector, windVector, asDegrees) {
 	var shipWindAngle = angle(shipVector, windVector, 'asDegrees');
 	
-	var result = windVector.angle(new Phaser.Point(0, 0), true);
+	var result = vectorToRotation(windVector, 'asDegrees');
 	
 	var windCase = windSailCase(shipVector, windVector);
 	
 	switch (windCase) {
 		case 'front':
-			result = -result;
+			result = vectorToRotation(shipVector, 'asDegrees') - (180 - sailMaxTurnAngle) * shipWindAngle / Math.abs(shipWindAngle);
 			break;
 		case 'side':
-			result = result + 90 * shipWindAngle / Math.abs(shipWindAngle);
+			result = result - 90 * shipWindAngle / Math.abs(shipWindAngle);
 			break;
 	}
+	
+	result = normalizeRotation(result);
+	
+	var sailWindAngle = result - vectorToRotation(windVector, 'asDegrees');
+	
+	if (Math.abs(sailWindAngle) > 90) {
+		result = result + 180;
+	}
+	
+	result = normalizeRotation(result);
 	
 	if (asDegrees) {
 		return result;
@@ -138,7 +196,7 @@ BasicGame.Game.prototype = {
 
 	create: function () {
 
-		var worldSize  = 10000;
+		var worldSize = 10000;
 		
 		this.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
 		
@@ -156,67 +214,24 @@ BasicGame.Game.prototype = {
 
 		water = this.game.add.tileSprite(-worldSize/2, -worldSize/2, worldSize, worldSize, waterBitmap);
 		
-		/*playerShip = this.game.add.sprite(0, 0, 'shipTemporary');
-		playerShip.anchor.setTo(0.5, 0.5);
-		playerShip.scale.x = playerShip.scale.y = 0.1;*/
-		
-		/*playerSail1 = this.game.add.sprite(0, 0, 'sailTemporary');
-		playerSail1.anchor.setTo(0.5, 0.5);
-		playerSail1.scale.x = playerSail1.scale.y = 0.07;*/
-		
-		/*playerSail2 = this.game.add.sprite(0, 0, 'sailTemporary');
-		playerSail2.anchor.setTo(0.5, 0.5);
-		playerSail2.scale.x = playerSail2.scale.y = 0.09;*/
-		
-		/*this.game.physics.enable(playerShip, Phaser.Physics.ARCADE);
-		playerShip.body.drag.set(0.5);
-		playerShip.body.maxVelocity.setTo(200, 200);
-		playerShip.body.collideWorldBounds = true;*/
-		
-		playerShip = new Ship(0, this.game);
+		playerShip = new Ship(0, this.game, 0, 0);
 		
 		this.game.camera.follow(playerShip.shipBody);
 		this.game.camera.focusOnXY(0, 0);
+		
+		otherShip = new Ship(1, this.game, 200, 0);
 		
 		guiWindLine = new Phaser.Line(0, 0, 0, 0);
 		guiShipLine = new Phaser.Line(0, 0, 0, 0);
 		guiSailLine = new Phaser.Line(0, 0, 0, 0);
 		
 		this.cursors = this.game.input.keyboard.createCursorKeys();
-		
-		playerShip.shipBody.bringToTop();
-		playerShip.sail1.bringToTop();
-		playerShip.sail2.bringToTop();
 	},
 
 	update: function () {
 
-		if (this.cursors.left.isDown) {
-			playerShip.shipBody.angle -= 1;
-		} else if (this.cursors.right.isDown) {
-			playerShip.shipBody.angle += 1;
-		}
-
-		if (this.cursors.up.isDown) {
-			currentSpeed += 1;
-		} else if (this.cursors.down.isDown) {
-			currentSpeed -= 1;
-		}
-
-		if (currentSpeed != 0) {
-			this.game.physics.arcade.velocityFromRotation(playerShip.shipBody.rotation, currentSpeed, playerShip.shipBody.body.velocity);
-		}
-		
-		playerShip.sail1.x = playerShip.shipBody.x + Math.cos(playerShip.shipBody.rotation) * (sailStep + sailShift);
-		playerShip.sail1.y = playerShip.shipBody.y + Math.sin(playerShip.shipBody.rotation) * (sailStep + sailShift);
-		
-		playerShip.sail1.rotation = sailRotation(rotationToVector(playerShip.shipBody.rotation), getWindVector(playerShip.shipBody.body.position));
-		
-		playerShip.sail2.x = playerShip.shipBody.x + Math.cos(playerShip.shipBody.rotation) * (-sailStep + sailShift);
-		playerShip.sail2.y = playerShip.shipBody.y + Math.sin(playerShip.shipBody.rotation) * (-sailStep + sailShift);
-		
-		playerShip.sail2.rotation = sailRotation(rotationToVector(playerShip.shipBody.rotation), getWindVector(playerShip.shipBody.body.position));
-
+		playerShip.update(this.cursors);
+		otherShip.update(this.cursors);
 	},
 	
 	render: function () {
@@ -231,7 +246,8 @@ BasicGame.Game.prototype = {
 			'windAngle': windRotation(playerShip.shipBody.body.position) / Math.PI * 180,
 			'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
 			'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
-			'shipSailAngle': angle(shipVector, windVector, 'asDegrees'),
+			'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
+			'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
 			'windCase': windSailCase(shipVector, windVector),
 		};
 		
@@ -250,15 +266,13 @@ BasicGame.Game.prototype = {
 			playerShip.shipBody.body.position.x + 300 + shipVector.normalize().x * 40,
 			playerShip.shipBody.body.position.y + 300 + shipVector.normalize().y * 40
 		);
-		this.game.debug.geom(guiShipLine, 'rgba(0,255,0,1)');
 		
 		guiWindLine.setTo(
 			playerShip.shipBody.body.position.x + 300,
 			playerShip.shipBody.body.position.y + 300,
-			playerShip.shipBody.body.position.x + 300 + windVector.x * 4,
-			playerShip.shipBody.body.position.y + 300 + windVector.y * 4
+			playerShip.shipBody.body.position.x + 300 + windVector.x * 3,
+			playerShip.shipBody.body.position.y + 300 + windVector.y * 3
 		);
-		this.game.debug.geom(guiWindLine, 'rgba(128,128,255,1)');
 		
 		guiSailLine.setTo(
 			playerShip.shipBody.body.position.x + 300,
@@ -266,7 +280,10 @@ BasicGame.Game.prototype = {
 			playerShip.shipBody.body.position.x + 300 + sailVector.x * 40,
 			playerShip.shipBody.body.position.y + 300 + sailVector.y * 40
 		);
-		this.game.debug.geom(guiSailLine, 'rgba(255,255,255,1)');
+		
+		this.game.debug.geom(guiShipLine, 'rgba(0,255,0,1)');
+		this.game.debug.geom(guiSailLine, 'rgba(255,255,255,0.5)');
+		this.game.debug.geom(guiWindLine, 'rgba(128,128,255,1)');
 		
 		this.game.debug.pixel(512 + 300 - 425/2*0.1, 384 + 300 - 150/2*0.1, 'rgba(255,255,255,1)');
 	},
