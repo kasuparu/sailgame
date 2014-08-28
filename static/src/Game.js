@@ -29,9 +29,6 @@ BasicGame.Game = function (game) {
 var windSpeed = 8;
 var sailStep = 5;
 var sailShift = -5;
-var guiWindLine = null;
-var guiShipLine = null;
-var guiSailLine = null;
 var sailMaxTurnAngle = 60;
 
 Ship = function (id, game, x, y) {
@@ -192,6 +189,50 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 	}
 }
 
+Gui = function (game, x, y) {
+	this.game = game;
+	
+	this.guiWindLine = new Phaser.Line(0, 0, 0, 0);
+	this.guiShipLine = new Phaser.Line(0, 0, 0, 0);
+	this.guiSailLine = new Phaser.Line(0, 0, 0, 0);
+	
+	this.x = x;
+	this.y = y;
+	
+	this.shipVectorScale = 40;
+	this.windVectorScale = 3;
+	this.sailVectorScale = 40;
+};
+
+Gui.prototype.render = function (x, y, shipVector, windVector, sailVector) {
+	this.guiShipLine.setTo(
+		this.x + x,
+		this.y + y,
+		this.x + x + shipVector.normalize().x * this.shipVectorScale,
+		this.y + y + shipVector.normalize().y * this.shipVectorScale
+	);
+	
+	this.guiWindLine.setTo(
+		this.x + x,
+		this.y + y,
+		this.x + x + windVector.x * this.windVectorScale,
+		this.y + y + windVector.y * this.windVectorScale
+	);
+	
+	this.guiSailLine.setTo(
+		this.x + x,
+		this.y + y,
+		this.x + x + sailVector.x * this.sailVectorScale,
+		this.y + y + sailVector.y * this.sailVectorScale
+	);
+	
+	this.game.debug.geom(this.guiShipLine, 'rgba(0,255,0,1)');
+	this.game.debug.geom(this.guiSailLine, 'rgba(255,255,255,0.5)');
+	this.game.debug.geom(this.guiWindLine, 'rgba(128,128,255,1)');
+	
+	this.game.debug.pixel(this.x, this.y, 'rgba(255,255,255,1)');
+};
+
 BasicGame.Game.prototype = {
 
 	create: function () {
@@ -219,11 +260,9 @@ BasicGame.Game.prototype = {
 		this.game.camera.follow(playerShip.shipBody);
 		this.game.camera.focusOnXY(0, 0);
 		
-		otherShip = new Ship(1, this.game, 200, 0);
+		//otherShip = new Ship(1, this.game, 200, 0);
 		
-		guiWindLine = new Phaser.Line(0, 0, 0, 0);
-		guiShipLine = new Phaser.Line(0, 0, 0, 0);
-		guiSailLine = new Phaser.Line(0, 0, 0, 0);
+		gui = new Gui(this.game, 1024 - 50, 768 - 50);
 		
 		this.cursors = this.game.input.keyboard.createCursorKeys();
 	},
@@ -231,7 +270,7 @@ BasicGame.Game.prototype = {
 	update: function () {
 
 		playerShip.update(this.cursors);
-		otherShip.update(this.cursors);
+		//otherShip.update(this.cursors);
 	},
 	
 	render: function () {
@@ -260,32 +299,7 @@ BasicGame.Game.prototype = {
 		//this.game.debug.spriteInfo(playerSail1, 32, 700);
 		//this.game.debug.spriteInfo(playerSail2, 700, 700);
 		
-		guiShipLine.setTo(
-			playerShip.shipBody.body.position.x + 300,
-			playerShip.shipBody.body.position.y + 300,
-			playerShip.shipBody.body.position.x + 300 + shipVector.normalize().x * 40,
-			playerShip.shipBody.body.position.y + 300 + shipVector.normalize().y * 40
-		);
-		
-		guiWindLine.setTo(
-			playerShip.shipBody.body.position.x + 300,
-			playerShip.shipBody.body.position.y + 300,
-			playerShip.shipBody.body.position.x + 300 + windVector.x * 3,
-			playerShip.shipBody.body.position.y + 300 + windVector.y * 3
-		);
-		
-		guiSailLine.setTo(
-			playerShip.shipBody.body.position.x + 300,
-			playerShip.shipBody.body.position.y + 300,
-			playerShip.shipBody.body.position.x + 300 + sailVector.x * 40,
-			playerShip.shipBody.body.position.y + 300 + sailVector.y * 40
-		);
-		
-		this.game.debug.geom(guiShipLine, 'rgba(0,255,0,1)');
-		this.game.debug.geom(guiSailLine, 'rgba(255,255,255,0.5)');
-		this.game.debug.geom(guiWindLine, 'rgba(128,128,255,1)');
-		
-		this.game.debug.pixel(512 + 300 - 425/2*0.1, 384 + 300 - 150/2*0.1, 'rgba(255,255,255,1)');
+		gui.render(this.game.camera.x, this.game.camera.y, shipVector, windVector, sailVector);
 	},
 
 	quitGame: function (pointer) {
