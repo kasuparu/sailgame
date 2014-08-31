@@ -20,6 +20,8 @@ BasicGame.Game = function (game) {
     this.rnd;		//	the repeatable random number generator
 	
 	this.cursors;
+	this.io;
+	this.socket;
 
     //	You can use any of these from any function within this State.
     //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
@@ -195,6 +197,8 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 Gui = function (game, x, y) {
 	this.game = game;
 	
+	this.guiCircle = new Phaser.Circle(0,0, 1);
+	
 	this.guiWindLine = new Phaser.Line(0, 0, 0, 0);
 	this.guiShipLine = new Phaser.Line(0, 0, 0, 0);
 	this.guiSailLine = new Phaser.Line(0, 0, 0, 0);
@@ -202,12 +206,19 @@ Gui = function (game, x, y) {
 	this.x = x;
 	this.y = y;
 	
+	this.guiCircleDiameter = 100;
 	this.shipVectorScale = 40;
 	this.windVectorScale = 3;
 	this.sailVectorScale = 40;
 };
 
-Gui.prototype.render = function (x, y, shipVector, windVector, sailVector) {
+Gui.prototype.render = function (x, y, shipVector, windVector, sailVector, socket) {
+	this.guiCircle.setTo(
+		this.x + x,
+		this.y + y,
+		this.guiCircleDiameter
+	);
+	
 	this.guiShipLine.setTo(
 		this.x + x,
 		this.y + y,
@@ -229,6 +240,8 @@ Gui.prototype.render = function (x, y, shipVector, windVector, sailVector) {
 		this.y + y + sailVector.y * this.sailVectorScale
 	);
 	
+	this.game.debug.geom(this.guiCircle, 'rgba(0,0,0,1)');
+	
 	this.game.debug.geom(this.guiShipLine, 'rgba(0,255,0,1)');
 	this.game.debug.geom(this.guiSailLine, 'rgba(255,255,255,0.5)');
 	this.game.debug.geom(this.guiWindLine, 'rgba(128,128,255,1)');
@@ -240,6 +253,9 @@ BasicGame.Game.prototype = {
 
 	create: function () {
 
+		this.io = io;
+		this.socket = this.io.connect();
+		
 		var worldSize = 10000;
 		
 		this.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
@@ -273,6 +289,21 @@ BasicGame.Game.prototype = {
 
 		playerShip.update(this.cursors);
 		//otherShip.update(this.cursors);
+		
+		if (this.socket) {
+			// TODO Check for socket overflow
+			// TODO Avoid emitting if disconnected (messages do stack up)
+			
+			this.socket.emit('clientData', {
+				'x': playerShip.shipBody.x,
+				'y': playerShip.shipBody.y,
+				'rotation': playerShip.shipBody.rotation,
+				'currentSpeed': playerShip.currentSpeed
+			}, function () {
+				// empty callback to count ackPackets
+			});
+		}
+		
 	},
 	
 	render: function () {
@@ -290,6 +321,8 @@ BasicGame.Game.prototype = {
 			'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
 			'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
 			'windCase': windSailCase(shipVector, windVector),
+			'socketConnected': !this.socket.disconnected,
+			'socketAckPackets': this.socket.ackPackets
 		};
 		
 		var count = 0;
@@ -301,7 +334,7 @@ BasicGame.Game.prototype = {
 		//this.game.debug.spriteInfo(playerSail1, 32, 700);
 		//this.game.debug.spriteInfo(playerSail2, 700, 700);
 		
-		gui.render(this.game.camera.x, this.game.camera.y, shipVector, windVector, sailVector);
+		gui.render(this.game.camera.x, this.game.camera.y, shipVector, windVector, sailVector, this.socket);
 	},
 
 	quitGame: function (pointer) {
