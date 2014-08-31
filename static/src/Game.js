@@ -30,6 +30,9 @@ var windSpeed = 8;
 var sailStep = 5;
 var sailShift = -5;
 var sailMaxTurnAngle = 60;
+var waterColorLight = '#1F96C1';
+var waterColorDark = '#25A1C6';
+var waterBitmapSize = 196;
 
 Ship = function (id, game, x, y) {
 	x = x || 0;
@@ -241,15 +244,14 @@ BasicGame.Game.prototype = {
 		
 		this.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
 		
-		var waterBitmapSize = 128;
 		var waterBitmap = this.game.add.bitmapData(waterBitmapSize, waterBitmapSize);
 
 		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, waterBitmapSize, waterBitmapSize);
-		waterGradient.addColorStop(0, "#0296A1"); // Light
-		waterGradient.addColorStop(0.25, "#014347"); // Dark
-		waterGradient.addColorStop(0.5, "#0296A1"); // Light
-		waterGradient.addColorStop(0.75, "#014347"); // Dark
-		waterGradient.addColorStop(1, "#0296A1"); // Light
+		waterGradient.addColorStop(0, waterColorLight);
+		waterGradient.addColorStop(0.25, waterColorDark);
+		waterGradient.addColorStop(0.5, waterColorLight);
+		waterGradient.addColorStop(0.75, waterColorDark);
+		waterGradient.addColorStop(1, waterColorLight);
 		waterBitmap.context.fillStyle = waterGradient;
 		waterBitmap.context.fillRect(0, 0, waterBitmapSize, waterBitmapSize);
 
