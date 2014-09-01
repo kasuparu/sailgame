@@ -197,7 +197,8 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 Gui = function (game, x, y) {
 	this.game = game;
 	
-	this.guiCircle = new Phaser.Circle(0,0, 1);
+	this.guiCornerLeft = new Phaser.Rectangle(0, 0, 0, 0);
+	this.guiCircleLeft = new Phaser.Circle(0, 0, 1);
 	
 	this.guiWindLine = new Phaser.Line(0, 0, 0, 0);
 	this.guiShipLine = new Phaser.Line(0, 0, 0, 0);
@@ -213,7 +214,14 @@ Gui = function (game, x, y) {
 };
 
 Gui.prototype.render = function (x, y, shipVector, windVector, sailVector, socket) {
-	this.guiCircle.setTo(
+	this.guiCornerLeft.setTo(
+		this.x + x - this.guiCircleDiameter/2,
+		this.y + y,
+		this.guiCircleDiameter/2,
+		this.guiCircleDiameter/2
+	);
+	
+	this.guiCircleLeft.setTo(
 		this.x + x,
 		this.y + y,
 		this.guiCircleDiameter
@@ -240,7 +248,8 @@ Gui.prototype.render = function (x, y, shipVector, windVector, sailVector, socke
 		this.y + y + sailVector.y * this.sailVectorScale
 	);
 	
-	this.game.debug.geom(this.guiCircle, 'rgba(0,0,0,1)');
+	this.game.debug.geom(this.guiCornerLeft, 'rgba(0,0,0,1)');
+	this.game.debug.geom(this.guiCircleLeft, 'rgba(0,0,0,1)');
 	
 	this.game.debug.geom(this.guiShipLine, 'rgba(0,255,0,1)');
 	this.game.debug.geom(this.guiSailLine, 'rgba(255,255,255,0.5)');
@@ -280,7 +289,7 @@ BasicGame.Game.prototype = {
 		
 		//otherShip = new Ship(1, this.game, 200, 0);
 		
-		gui = new Gui(this.game, 1024 - 50, 768 - 50);
+		gui = new Gui(this.game, 50, 768 - 50);
 		
 		this.cursors = this.game.input.keyboard.createCursorKeys();
 	},
