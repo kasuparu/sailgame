@@ -81,6 +81,8 @@ Ship.prototype.update = function (cursors) {
 		} else if (cursors.down.isDown) {
 			this.currentSpeed -= 1;
 		}
+		
+		this.currentSpeed = windSailPressureProjected(shipVector, sailVector, windVector);
 	}
 
 	if (this.currentSpeed != 0) {
@@ -192,7 +194,21 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 	} else {
 		return Phaser.Math.degToRad(result);
 	}
-}
+};
+
+var windSailPressureNormalized = function (sailVector, windVector) {
+	var sailWindAngle = angle(sailVector, windVector);
+	
+	var cos = Math.cos(sailWindAngle);
+	
+	return (Math.pow(cos * cos, 3) + 0.4 * Math.pow(1 - cos * cos, 2)) * windSpeed;
+};
+
+var windSailPressureProjected = function (shipVector, sailVector, windVector) {
+	var shipSailAngle = angle(shipVector, sailVector);
+	
+	return Math.cos(shipSailAngle) * windSailPressureNormalized(sailVector, windVector);
+};
 
 Gui = function (game, x, y) {
 	this.game = game;
@@ -323,13 +339,15 @@ BasicGame.Game.prototype = {
 		var debugObj = {
 			//'position': playerShip.body.position,
 			//'velocity': playerShip.body.velocity,
-			'shipAngle': playerShip.shipBody.rotation / Math.PI * 180,
-			'windAngle': windRotation(playerShip.shipBody.body.position) / Math.PI * 180,
-			'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
-			'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
-			'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
-			'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
-			'windCase': windSailCase(shipVector, windVector),
+			//'shipAngle': playerShip.shipBody.rotation / Math.PI * 180,
+			//'windAngle': windRotation(playerShip.shipBody.body.position) / Math.PI * 180,
+			//'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
+			//'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
+			//'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
+			//'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
+			//'windSailPressureNormalized': windSailPressureNormalized(sailVector, windVector),
+			'windSailPressureProjected': windSailPressureProjected(shipVector, sailVector, windVector),
+			//'windCase': windSailCase(shipVector, windVector),
 			//'socketConnected': 'undefined' !== typeof this.socket ? !this.socket.disconnected : false,
 			//'socketAckPackets': 'undefined' !== typeof this.socket ? this.socket.ackPackets : 0
 		};
