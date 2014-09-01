@@ -28,7 +28,7 @@ BasicGame.Game = function (game) {
 
 };
 
-var windSpeed = 8;
+var windSpeed = 32;
 var sailStep = 5;
 var sailShift = -5;
 var sailMaxTurnAngle = 60;
@@ -48,13 +48,17 @@ Ship = function (id, game, x, y) {
 	this.shipBody.anchor.setTo(0.5, 0.5);
 	this.shipBody.scale.x = this.shipBody.scale.y = 0.1;
 	
+	this.sailState = 1;
+	
 	this.sail1 = game.add.sprite(x, y, 'sailTemporary');
 	this.sail1.anchor.setTo(0.5, 0.5);
-	this.sail1.scale.x = this.sail1.scale.y = 0.07;
+	this.sail1.scale.x = 0.07 * this.sailState;
+	this.sail1.scale.y = 0.07;
 	
 	this.sail2 = game.add.sprite(x, y, 'sailTemporary');
 	this.sail2.anchor.setTo(0.5, 0.5);
-	this.sail2.scale.x = this.sail2.scale.y = 0.09;
+	this.sail2.scale.x = 0.09 * this.sailState;
+	this.sail2.scale.y = 0.09;
 	
 	this.game.physics.enable(this.shipBody, Phaser.Physics.ARCADE);
 	this.shipBody.body.drag.set(0.5);
@@ -69,6 +73,10 @@ Ship = function (id, game, x, y) {
 };
 
 Ship.prototype.update = function (cursors) {
+	var shipVector = rotationToVector(this.shipBody.rotation);
+	var windVector = getWindVector(this.shipBody.body.position);
+	var sailVector = rotationToVector(this.sail1.rotation);
+	
 	if (typeof cursors !== 'undefined') {
 		if (cursors.left.isDown) {
 			this.shipBody.angle -= 1;
@@ -76,13 +84,13 @@ Ship.prototype.update = function (cursors) {
 			this.shipBody.angle += 1;
 		}
 
-		if (cursors.up.isDown) {
-			this.currentSpeed += 1;
-		} else if (cursors.down.isDown) {
-			this.currentSpeed -= 1;
+		if (cursors.up.isDown && this.sailState < 1) {
+			this.sailState += 0.25;
+		} else if (cursors.down.isDown && this.sailState > 0) {
+			this.sailState -= 0.25;
 		}
 		
-		this.currentSpeed = windSailPressureProjected(shipVector, sailVector, windVector);
+		this.currentSpeed = this.sailState * windSailPressureProjected(shipVector, sailVector, windVector);
 	}
 
 	if (this.currentSpeed != 0) {
@@ -92,12 +100,12 @@ Ship.prototype.update = function (cursors) {
 	this.sail1.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (sailStep + sailShift);
 	this.sail1.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (sailStep + sailShift);
 	
-	this.sail1.rotation = sailRotation(rotationToVector(this.shipBody.rotation), getWindVector(this.shipBody.body.position));
+	this.sail1.rotation = sailRotation(shipVector, windVector);
 	
 	this.sail2.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (-sailStep + sailShift);
 	this.sail2.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (-sailStep + sailShift);
 	
-	this.sail2.rotation = sailRotation(rotationToVector(this.shipBody.rotation), getWindVector(this.shipBody.body.position));
+	this.sail2.rotation = sailRotation(shipVector, windVector);
 };
 
 var windRotation = function (positionPoint) {
@@ -225,7 +233,7 @@ Gui = function (game, x, y) {
 	
 	this.guiCircleDiameter = 100;
 	this.shipVectorScale = 40;
-	this.windVectorScale = 3;
+	this.windVectorScale = 1.5;
 	this.sailVectorScale = 40;
 };
 
@@ -279,7 +287,14 @@ BasicGame.Game.prototype = {
 	create: function () {
 
 		this.io = io;
-		//this.socket = this.io.connect();
+		this.socket = this.io.connect();
+		
+		this.socket.on('connect', function () {
+			this.socket.on('clientPing', function (data) {
+				console.log(data.startTime);
+				this.socket.emit('clientPong', data);
+			});
+		});
 		
 		var worldSize = 10000;
 		
@@ -287,21 +302,21 @@ BasicGame.Game.prototype = {
 		
 		var waterBitmap = this.game.add.bitmapData(waterBitmapSize, waterBitmapSize);
 
-		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, waterBitmapSize, waterBitmapSize);
+		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, waterBitmapSize - 1, waterBitmapSize - 1);
 		waterGradient.addColorStop(0, waterColorLight);
 		waterGradient.addColorStop(0.25, waterColorDark);
 		waterGradient.addColorStop(0.5, waterColorLight);
 		waterGradient.addColorStop(0.75, waterColorDark);
 		waterGradient.addColorStop(1, waterColorLight);
 		waterBitmap.context.fillStyle = waterGradient;
-		waterBitmap.context.fillRect(0, 0, waterBitmapSize, waterBitmapSize);
+		waterBitmap.context.fillRect(0, 0, waterBitmapSize - 1, waterBitmapSize - 1);
 
 		water = this.game.add.tileSprite(-worldSize/2, -worldSize/2, worldSize, worldSize, waterBitmap);
 		
-		playerShip = new Ship(0, this.game, 0, 0);
+		playerShip = new Ship(0, this.game, -worldSize/4, worldSize/4);
 		
 		this.game.camera.follow(playerShip.shipBody);
-		this.game.camera.focusOnXY(0, 0);
+		this.game.camera.focusOnXY(-worldSize/4, worldSize/4);
 		
 		//otherShip = new Ship(1, this.game, 200, 0);
 		
@@ -315,7 +330,7 @@ BasicGame.Game.prototype = {
 		playerShip.update(this.cursors);
 		//otherShip.update(this.cursors);
 		
-		if ('undefined' !== typeof this.socket) {
+		if (false) {
 			// TODO Check for socket overflow
 			// TODO Avoid emitting if disconnected (messages do stack up)
 			
@@ -345,8 +360,10 @@ BasicGame.Game.prototype = {
 			//'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
 			//'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
 			//'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
+			'sailState': playerShip.sailState,
 			//'windSailPressureNormalized': windSailPressureNormalized(sailVector, windVector),
 			'windSailPressureProjected': windSailPressureProjected(shipVector, sailVector, windVector),
+			'velocity': playerShip.shipBody.body.velocity,
 			//'windCase': windSailCase(shipVector, windVector),
 			//'socketConnected': 'undefined' !== typeof this.socket ? !this.socket.disconnected : false,
 			//'socketAckPackets': 'undefined' !== typeof this.socket ? this.socket.ackPackets : 0

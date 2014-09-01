@@ -51,10 +51,20 @@ var io = require('socket.io').listen(server);
 
 io.sockets.on('connection', function (socket) {
 
-  socket.on('clientData', function (dataObj) {
-    //console.log('clientData: ' + JSON.stringify(dataObj));
-  });
-  
+	socket.on('clientData', function (dataObj) {
+		//console.log('clientData: ' + JSON.stringify(dataObj));
+	});
+	
+	socket.on('clientPong', function (data) {
+		latency = Date.now() - data.startTime;
+		console.log('latency: ' + latency + 'ms');
+		logger.debug('latency: ' + latency + 'ms');
+	});
+	
+	var timer = setInterval(function() {
+		socket.emit('clientPing', {startTime: Date.now()});
+	}, 2000);
+
 });
 
 
