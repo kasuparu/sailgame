@@ -254,7 +254,7 @@ BasicGame.Game.prototype = {
 	create: function () {
 
 		this.io = io;
-		this.socket = this.io.connect();
+		//this.socket = this.io.connect();
 		
 		var worldSize = 10000;
 		
@@ -290,7 +290,7 @@ BasicGame.Game.prototype = {
 		playerShip.update(this.cursors);
 		//otherShip.update(this.cursors);
 		
-		if (this.socket) {
+		if ('undefined' !== typeof this.socket) {
 			// TODO Check for socket overflow
 			// TODO Avoid emitting if disconnected (messages do stack up)
 			
@@ -321,8 +321,8 @@ BasicGame.Game.prototype = {
 			'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
 			'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
 			'windCase': windSailCase(shipVector, windVector),
-			'socketConnected': !this.socket.disconnected,
-			'socketAckPackets': this.socket.ackPackets
+			//'socketConnected': 'undefined' !== typeof this.socket ? !this.socket.disconnected : false,
+			//'socketAckPackets': 'undefined' !== typeof this.socket ? this.socket.ackPackets : 0
 		};
 		
 		var count = 0;
