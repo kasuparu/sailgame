@@ -37,6 +37,7 @@ var sailMaxTurnAngle = 60;
 var waterColorLight = '#1F96C1';
 var waterColorDark = '#25A1C6';
 var waterBitmapSize = 196;
+var epsilonDegrees = 0.001;
 
 Ship = function (id, game, x, y) {
 	x = x || 0;
@@ -140,7 +141,7 @@ var vectorToRotation = function (vector, asDegrees) {
 var normalizeRotation = function (rotation) {
 	var result = rotation;
 	
-	while (Math.abs(result) > 180) {
+	while (Math.abs(result) > 180 + epsilonDegrees) {
 		result -= result / Math.abs(result) * 360;
 	}
 		
@@ -172,9 +173,9 @@ var windSailCase = function (shipVector, windVector) {
 	
 	var result = 'rear';
 	
-	if (Math.abs(shipWindAngle) > (180 - sailMaxTurnAngle)) {
+	if (Math.abs(shipWindAngle) > (180 - sailMaxTurnAngle) + epsilonDegrees) {
 		result = 'front';
-	} else if (Math.abs(shipWindAngle) > sailMaxTurnAngle) {
+	} else if (Math.abs(shipWindAngle) > sailMaxTurnAngle + epsilonDegrees) {
 		result = 'side';
 	}
 	
@@ -199,9 +200,9 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 	
 	result = normalizeRotation(result);
 	
-	var sailWindAngle = result - vectorToRotation(windVector, 'asDegrees');
+	var sailWindAngle = normalizeRotation(result - vectorToRotation(windVector, 'asDegrees'));
 	
-	if (Math.abs(sailWindAngle) > 90) {
+	if (Math.abs(sailWindAngle) > 90 + epsilonDegrees) {
 		result = result + 180;
 	}
 	
@@ -372,7 +373,7 @@ BasicGame.Game.prototype = {
 			//'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
 			//'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
 			//'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
-			//'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
+			'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
 			'sailState': playerShip.sailState,
 			//'windSailPressureNormalized': windSailPressureNormalized(sailVector, windVector),
 			'windSailPressureProjected': windSailPressureProjected(shipVector, sailVector, windVector),
