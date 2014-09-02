@@ -120,7 +120,7 @@ Ship.prototype.update = function (cursors) {
 };
 
 var windRotation = function (positionPoint) {
-	var windVector = new Phaser.Point(-positionPoint.x, -positionPoint.y);
+	var windVector = rotate(new Phaser.Point(-positionPoint.x, -positionPoint.y), Math.PI / 2);
 
 	return vectorToRotation(windVector);
 };
@@ -136,7 +136,7 @@ var rotationToVector = function (rotation) {
 
 var vectorToRotation = function (vector, asDegrees) {
 	return new Phaser.Point(0, 0).angle(vector, asDegrees);
-}
+};
 
 var normalizeRotation = function (rotation) {
 	var result = rotation;
@@ -146,7 +146,7 @@ var normalizeRotation = function (rotation) {
 	}
 		
 	return result;
-}
+};
 
 var angle = function (a, b, asDegrees) {
 	if (typeof asDegrees === 'undefined') {
@@ -166,7 +166,14 @@ var angle = function (a, b, asDegrees) {
 	} else {
 		return Phaser.Math.degToRad(result);
 	}
-}
+};
+
+var rotate = function (point, angle) {
+	return new Phaser.Point(
+		point.x * Math.cos(angle) - point.y * Math.sin(angle),
+		point.x * Math.sin(angle) + point.y * Math.cos(angle)
+	);
+};
 
 var windSailCase = function (shipVector, windVector) {
 	var shipWindAngle = angle(shipVector, windVector, 'asDegrees');
@@ -366,14 +373,14 @@ BasicGame.Game.prototype = {
 		var sailVector = rotationToVector(playerShip.sail1.rotation);
 		
 		var debugObj = {
-			//'position': playerShip.body.position,
+			'position': playerShip.shipBody.body.position,
 			//'velocity': playerShip.body.velocity,
 			//'shipAngle': playerShip.shipBody.rotation / Math.PI * 180,
 			//'windAngle': windRotation(playerShip.shipBody.body.position) / Math.PI * 180,
 			//'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
 			//'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
 			//'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
-			'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
+			//'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
 			'sailState': playerShip.sailState,
 			//'windSailPressureNormalized': windSailPressureNormalized(sailVector, windVector),
 			'windSailPressureProjected': windSailPressureProjected(shipVector, sailVector, windVector),
