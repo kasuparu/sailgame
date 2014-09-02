@@ -5,24 +5,24 @@ BasicGame.Game = function (game) {
 
     var self = this;
 	
-	this.game;		//	a reference to the currently running game
-    this.add;		//	used to add sprites, text, groups, etc
-    this.camera;	//	a reference to the game camera
-    this.cache;		//	the game cache
-    this.input;		//	the global input manager (you can access this.input.keyboard, this.input.mouse, as well from it)
-    this.load;		//	for preloading assets
-    this.math;		//	lots of useful common math operations
-    this.sound;		//	the sound manager - add a sound, play one, set-up markers, etc
-    this.stage;		//	the game stage
-    this.time;		//	the clock
-    this.tweens;	//	the tween manager
-    this.world;		//	the game world
-    this.particles;	//	the particle manager
-    this.physics;	//	the physics manager
-    this.rnd;		//	the repeatable random number generator
+	self.game;		//	a reference to the currently running game
+    self.add;		//	used to add sprites, text, groups, etc
+    self.camera;	//	a reference to the game camera
+    self.cache;		//	the game cache
+    self.input;		//	the global input manager (you can access self.input.keyboard, self.input.mouse, as well from it)
+    self.load;		//	for preloading assets
+    self.math;		//	lots of useful common math operations
+    self.sound;		//	the sound manager - add a sound, play one, set-up markers, etc
+    self.stage;		//	the game stage
+    self.time;		//	the clock
+    self.tweens;	//	the tween manager
+    self.world;		//	the game world
+    self.particles;	//	the particle manager
+    self.physics;	//	the physics manager
+    self.rnd;		//	the repeatable random number generator
 	
-	this.cursors;
-	this.io;
+	self.cursors;
+	self.io;
 	self.socket;
 
     //	You can use any of these from any function within this State.
@@ -296,6 +296,8 @@ BasicGame.Game.prototype = {
 
 	create: function () {
 
+		var self = this;
+		
 		self.io = io;
 		self.socket = self.io.connect();
 		
@@ -305,9 +307,9 @@ BasicGame.Game.prototype = {
 		
 		var worldSize = 10000;
 		
-		this.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
+		self.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
 		
-		var waterBitmap = this.game.add.bitmapData(waterBitmapSize, waterBitmapSize);
+		var waterBitmap = self.game.add.bitmapData(waterBitmapSize, waterBitmapSize);
 
 		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, waterBitmapSize - 1, waterBitmapSize - 1);
 		waterGradient.addColorStop(0, waterColorLight);
@@ -318,30 +320,32 @@ BasicGame.Game.prototype = {
 		waterBitmap.context.fillStyle = waterGradient;
 		waterBitmap.context.fillRect(0, 0, waterBitmapSize - 1, waterBitmapSize - 1);
 
-		water = this.game.add.tileSprite(-worldSize/2, -worldSize/2, worldSize, worldSize, waterBitmap);
+		water = self.game.add.tileSprite(-worldSize/2, -worldSize/2, worldSize, worldSize, waterBitmap);
 		
-		playerShip = new Ship(0, this.game, -worldSize/4, worldSize/4);
+		playerShip = new Ship(0, self.game, -worldSize/4, worldSize/4);
 		
-		this.game.camera.follow(playerShip.shipBody);
-		this.game.camera.focusOnXY(-worldSize/4, worldSize/4);
+		self.game.camera.follow(playerShip.shipBody);
+		self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
 		
-		//otherShip = new Ship(1, this.game, 200, 0);
+		//otherShip = new Ship(1, self.game, 200, 0);
 		
-		gui = new Gui(this.game, 50, 768 - 50);
+		gui = new Gui(self.game, 50, 768 - 50);
 		
-		this.cursors = this.game.input.keyboard.createCursorKeys();
+		self.cursors = self.game.input.keyboard.createCursorKeys();
 	},
 
 	update: function () {
 
-		playerShip.update(this.cursors);
-		//otherShip.update(this.cursors);
+		var self = this;
+		
+		playerShip.update(self.cursors);
+		//otherShip.update(self.cursors);
 		
 		if (false) {
 			// TODO Check for socket overflow
 			// TODO Avoid emitting if disconnected (messages do stack up)
 			
-			this.socket.emit('clientData', {
+			self.socket.emit('clientData', {
 				'x': playerShip.shipBody.x,
 				'y': playerShip.shipBody.y,
 				'rotation': playerShip.shipBody.rotation,
@@ -354,6 +358,8 @@ BasicGame.Game.prototype = {
 	},
 	
 	render: function () {
+		var self = this;
+		
 		var shipVector = rotationToVector(playerShip.shipBody.rotation);
 		var windVector = getWindVector(playerShip.shipBody.body.position);
 		var sailVector = rotationToVector(playerShip.sail1.rotation);
@@ -372,29 +378,31 @@ BasicGame.Game.prototype = {
 			'windSailPressureProjected': windSailPressureProjected(shipVector, sailVector, windVector),
 			//'velocity': playerShip.shipBody.body.velocity,
 			//'windCase': windSailCase(shipVector, windVector),
-			//'socketConnected': 'undefined' !== typeof this.socket ? !this.socket.disconnected : false,
-			//'socketAckPackets': 'undefined' !== typeof this.socket ? this.socket.ackPackets : 0
+			//'socketConnected': 'undefined' !== typeof self.socket ? !self.socket.disconnected : false,
+			//'socketAckPackets': 'undefined' !== typeof self.socket ? self.socket.ackPackets : 0
 		};
 		
 		var count = 0;
 		
 		for (var debugKey in debugObj) {
-			this.game.debug.text(debugKey + ': ' + debugObj[debugKey], 32, ++count * 16);
+			self.game.debug.text(debugKey + ': ' + debugObj[debugKey], 32, ++count * 16);
 		}
 		
-		//this.game.debug.spriteInfo(playerSail1, 32, 700);
-		//this.game.debug.spriteInfo(playerSail2, 700, 700);
+		//self.game.debug.spriteInfo(playerSail1, 32, 700);
+		//self.game.debug.spriteInfo(playerSail2, 700, 700);
 		
-		gui.render(this.game.camera.x, this.game.camera.y, shipVector, windVector, sailVector, this.socket);
+		gui.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector, self.socket);
 	},
 
 	quitGame: function (pointer) {
 
+		var self = this;
+		
 		//	Here you should destroy anything you no longer need.
 		//	Stop music, delete sprites, purge caches, free resources, all that good stuff.
 
 		//	Then let's go back to the main menu.
-		this.state.start('MainMenu');
+		self.state.start('MainMenu');
 
 	}
 
