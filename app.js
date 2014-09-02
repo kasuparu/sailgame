@@ -56,9 +56,9 @@ io.sockets.on('connection', function (socket) {
 	});
 	
 	socket.on('clientPong', function (data) {
-		latency = Date.now() - data.startTime;
+		var latency = Date.now() - data.startTime;
 		console.log('latency: ' + latency + 'ms');
-		logger.debug('latency: ' + latency + 'ms');
+		//logger.debug('latency: ' + latency + 'ms');
 	});
 	
 	var timer = setInterval(function() {

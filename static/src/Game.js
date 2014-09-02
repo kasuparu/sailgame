@@ -3,7 +3,9 @@ BasicGame.Game = function (game) {
 
 	//	When a State is added to Phaser it automatically has the following properties set on it, even if they already exist:
 
-    this.game;		//	a reference to the currently running game
+    var self = this;
+	
+	this.game;		//	a reference to the currently running game
     this.add;		//	used to add sprites, text, groups, etc
     this.camera;	//	a reference to the game camera
     this.cache;		//	the game cache
@@ -21,14 +23,14 @@ BasicGame.Game = function (game) {
 	
 	this.cursors;
 	this.io;
-	this.socket;
+	self.socket;
 
     //	You can use any of these from any function within this State.
     //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
 
 };
 
-var windSpeed = 32;
+var windSpeed = 64;
 var sailStep = 5;
 var sailShift = -5;
 var sailMaxTurnAngle = 60;
@@ -49,6 +51,7 @@ Ship = function (id, game, x, y) {
 	this.shipBody.scale.x = this.shipBody.scale.y = 0.1;
 	
 	this.sailState = 1;
+	this.sailStateDelta = 0;
 	
 	this.sail1 = game.add.sprite(x, y, 'sailTemporary');
 	this.sail1.anchor.setTo(0.5, 0.5);
@@ -84,11 +87,18 @@ Ship.prototype.update = function (cursors) {
 			this.shipBody.angle += 1;
 		}
 
-		if (cursors.up.isDown && this.sailState < 1) {
-			this.sailState += 0.25;
-		} else if (cursors.down.isDown && this.sailState > 0) {
-			this.sailState -= 0.25;
+		if (cursors.up.isDown && this.sailState < 1 && this.sailStateDelta == 0) {
+			this.sailStateDelta = 0.25;
+		} else if (cursors.down.isDown && this.sailState > 0 && this.sailStateDelta == 0) {
+			this.sailStateDelta = -0.25;
+		} else {
+			this.sailStateDelta = 0;
 		}
+		
+		this.sailState += this.sailStateDelta;
+		
+		this.sail1.scale.x = 0.07 * this.sailState;
+		this.sail2.scale.x = 0.09 * this.sailState;
 		
 		this.currentSpeed = this.sailState * windSailPressureProjected(shipVector, sailVector, windVector);
 	}
@@ -209,7 +219,7 @@ var windSailPressureNormalized = function (sailVector, windVector) {
 	
 	var cos = Math.cos(sailWindAngle);
 	
-	return (Math.pow(cos * cos, 3) + 0.4 * Math.pow(1 - cos * cos, 2)) * windSpeed;
+	return (Math.pow(cos * cos, 3) + 0.4 * Math.pow(1 - cos * cos, 2)) * windVector.getMagnitude();
 };
 
 var windSailPressureProjected = function (shipVector, sailVector, windVector) {
@@ -233,7 +243,7 @@ Gui = function (game, x, y) {
 	
 	this.guiCircleDiameter = 100;
 	this.shipVectorScale = 40;
-	this.windVectorScale = 1.5;
+	this.windVectorScale = 0.75;
 	this.sailVectorScale = 40;
 };
 
@@ -286,14 +296,11 @@ BasicGame.Game.prototype = {
 
 	create: function () {
 
-		this.io = io;
-		this.socket = this.io.connect();
+		self.io = io;
+		self.socket = self.io.connect();
 		
-		this.socket.on('connect', function () {
-			this.socket.on('clientPing', function (data) {
-				console.log(data.startTime);
-				this.socket.emit('clientPong', data);
-			});
+		self.socket.on('clientPing', function (data) {
+			self.socket.emit('clientPong', data);
 		});
 		
 		var worldSize = 10000;
@@ -363,7 +370,7 @@ BasicGame.Game.prototype = {
 			'sailState': playerShip.sailState,
 			//'windSailPressureNormalized': windSailPressureNormalized(sailVector, windVector),
 			'windSailPressureProjected': windSailPressureProjected(shipVector, sailVector, windVector),
-			'velocity': playerShip.shipBody.body.velocity,
+			//'velocity': playerShip.shipBody.body.velocity,
 			//'windCase': windSailCase(shipVector, windVector),
 			//'socketConnected': 'undefined' !== typeof this.socket ? !this.socket.disconnected : false,
 			//'socketAckPackets': 'undefined' !== typeof this.socket ? this.socket.ackPackets : 0
