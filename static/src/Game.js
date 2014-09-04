@@ -340,6 +340,10 @@ BasicGame.Game.prototype = {
 		gui = new Gui(self.game, 50, 768 - 50);
 		
 		self.cursors = self.game.input.keyboard.createCursorKeys();
+		
+		//timer = self.game.time.create(false);
+		//timer.start();
+		self.game.time.advancedTiming = true;
 	},
 
 	update: function () {
@@ -373,6 +377,7 @@ BasicGame.Game.prototype = {
 		var sailVector = rotationToVector(playerShip.sail1.rotation);
 		
 		var debugObj = {
+			'fps': self.game.time.fps,
 			'position': playerShip.shipBody.body.position,
 			//'velocity': playerShip.body.velocity,
 			//'shipAngle': playerShip.shipBody.rotation / Math.PI * 180,
