@@ -24,6 +24,9 @@ BasicGame.Game = function (game) {
 	self.cursors;
 	self.io;
 	self.socket;
+	self.averagePingMs;
+	self.controls;
+	self.eventQueue;
 
     //	You can use any of these from any function within this State.
     //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
@@ -52,7 +55,7 @@ Ship = function (id, game, x, y) {
 	this.shipBody.scale.x = this.shipBody.scale.y = 0.1;
 	
 	this.sailState = 1;
-	this.sailStateDelta = 0;
+	
 	
 	this.sail1 = game.add.sprite(x, y, 'sailTemporary');
 	this.sail1.anchor.setTo(0.5, 0.5);
@@ -74,6 +77,8 @@ Ship = function (id, game, x, y) {
 	this.shipBody.bringToTop();
 	this.sail1.bringToTop();
 	this.sail2.bringToTop();
+	
+	this.controls = new Controls();
 };
 
 Ship.prototype.update = function (cursors) {
@@ -81,28 +86,13 @@ Ship.prototype.update = function (cursors) {
 	var windVector = getWindVector(this.shipBody.body.position);
 	var sailVector = rotationToVector(this.sail1.rotation);
 	
-	if (typeof cursors !== 'undefined') {
-		if (cursors.left.isDown) {
-			this.shipBody.angle -= 1;
-		} else if (cursors.right.isDown) {
-			this.shipBody.angle += 1;
-		}
-
-		if (cursors.up.isDown && this.sailState < 1 && this.sailStateDelta == 0) {
-			this.sailStateDelta = 0.25;
-		} else if (cursors.down.isDown && this.sailState > 0 && this.sailStateDelta == 0) {
-			this.sailStateDelta = -0.25;
-		} else {
-			this.sailStateDelta = 0;
-		}
-		
-		this.sailState += this.sailStateDelta;
-		
-		this.sail1.scale.x = 0.07 * this.sailState;
-		this.sail2.scale.x = 0.09 * this.sailState;
-		
-		this.currentSpeed = this.sailState * windSailPressureProjected(shipVector, sailVector, windVector);
-	}
+	this.sailState = this.controls.sailState;
+	this.shipBody.angle += this.controls.steering;
+	
+	this.sail1.scale.x = 0.07 * this.sailState;
+	this.sail2.scale.x = 0.09 * this.sailState;
+	
+	this.currentSpeed = this.sailState * windSailPressureProjected(shipVector, sailVector, windVector);
 
 	if (this.currentSpeed != 0) {
 		this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
@@ -117,6 +107,60 @@ Ship.prototype.update = function (cursors) {
 	this.sail2.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (-sailStep + sailShift);
 	
 	this.sail2.rotation = sailRotation(shipVector, windVector);
+};
+
+Event = function (type, data) {
+	this.type = type;
+	this.data = data;
+};
+
+Controls = function (object) {
+	if ('undefined' !== typeof object) {
+		this.sailState = object.sailState;
+		this.steering = object.steering;
+	} else {
+		this.sailState = 1;
+		this.steering = 0;
+	}
+};
+
+Controls.prototype.update = function (cursors, targetControls, eventQueue) {
+	if (typeof cursors !== 'undefined') {
+		if (cursors.left.isDown) {
+			// this.shipBody.angle -= 1;
+			this.steering = -1;
+		} else if (cursors.right.isDown) {
+			//this.shipBody.angle += 1;
+			this.steering = 1;
+		} else {
+			this.steering = 0;
+		}
+
+		if (cursors.up.isDown && this.sailState < 1) {
+			this.sailState += 0.25;
+		} else if (cursors.down.isDown && this.sailState > 0) {
+			this.sailState -= 0.25;
+		}
+	}
+	
+	//console.log(this.steering + ' ' + this.sailState);
+	
+	if ('undefined' !== typeof targetControls) {
+		if (this.sailState !== targetControls.sailState || this.steering !== targetControls.steering) {
+			var event = new Event(
+				'controlsSend',
+				{
+					'steering': this.steering,
+					'sailState': this.sailState,
+					'ts': Date.now()
+				}
+			);
+			
+			eventQueue.push(event);
+			//console.log('eventQueue push: ' + JSON.stringify(event));
+			// TODO set timer to average ping (roundtrip / 2) to apply controls
+		}
+	}
 };
 
 var windRotation = function (positionPoint) {
@@ -306,11 +350,22 @@ BasicGame.Game.prototype = {
 
 		var self = this;
 		
+		self.eventQueue = [];
+		
 		self.io = io;
 		self.socket = self.io.connect();
+		self.averagePingMs = 10;
 		
 		self.socket.on('clientPing', function (data) {
-			self.socket.emit('clientPong', data);
+			self.averagePingMs = 'undefined' !== typeof data.averagePingMs && null !== data.averagePingMs ? data.averagePingMs : self.averagePingMs;
+			self.socket.emit('clientPong', data.startTime);
+		});
+		
+		self.socket.on('controlsReceive', function (data) {
+			var event = new Event('controlsReceive', data);
+			
+			self.eventQueue.push(event);
+			//console.log('eventQueue push: ' + JSON.stringify(event));
 		});
 		
 		var worldSize = 10000;
@@ -340,6 +395,7 @@ BasicGame.Game.prototype = {
 		gui = new Gui(self.game, 50, 768 - 50);
 		
 		self.cursors = self.game.input.keyboard.createCursorKeys();
+		self.controls = new Controls();
 		
 		//timer = self.game.time.create(false);
 		//timer.start();
@@ -350,7 +406,25 @@ BasicGame.Game.prototype = {
 
 		var self = this;
 		
-		playerShip.update(self.cursors);
+		var previousControls = new Controls(self.controls);
+		self.controls.update(self.cursors, previousControls, self.eventQueue);
+		
+		while (event = self.eventQueue.pop()) {
+			console.log('eventQueue pop: ' + JSON.stringify(event));
+			
+			switch (event.type) {
+				case 'controlsSend':
+					self.socket.emit('controlsSend', event.data);
+					break;
+				
+				case 'controlsReceive':
+					playerShip.controls.steering = event.data.steering;
+					playerShip.controls.sailState = event.data.sailState;
+					break;
+			}
+		};
+		
+		playerShip.update();
 		//otherShip.update(self.cursors);
 		
 		if (false) {
@@ -392,7 +466,8 @@ BasicGame.Game.prototype = {
 			//'velocity': playerShip.shipBody.body.velocity,
 			//'windCase': windSailCase(shipVector, windVector),
 			//'socketConnected': 'undefined' !== typeof self.socket ? !self.socket.disconnected : false,
-			//'socketAckPackets': 'undefined' !== typeof self.socket ? self.socket.ackPackets : 0
+			//'socketAckPackets': 'undefined' !== typeof self.socket ? self.socket.ackPackets : 0,
+			'averagePingMs': self.averagePingMs
 		};
 		
 		var count = 0;

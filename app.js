@@ -51,18 +51,31 @@ var io = require('socket.io').listen(server);
 
 io.sockets.on('connection', function (socket) {
 
-	socket.on('clientData', function (dataObj) {
-		//console.log('clientData: ' + JSON.stringify(dataObj));
+	socket.on('controlsSend', function (dataObj) {
+		//console.log('controlsSend: ' + JSON.stringify(dataObj));
+		// TODO Apply controls
+		socket.emit('controlsReceive', dataObj);
 	});
 	
-	socket.on('clientPong', function (data) {
-		var latency = Date.now() - data.startTime;
-		console.log('latency: ' + latency + 'ms');
-		//logger.debug('latency: ' + latency + 'ms');
+	socket.on('clientPong', function (startTime) {
+		var pingMs = (Date.now() - startTime) / 2;
+		//console.log('pingMs: ' + pingMs + 'ms');
+		
+		socket.get('averagePingMs', function (err, averagePingMs) {
+			var averagePingMs = null !== averagePingMs ? averagePingMs : pingMs;
+			var newAveragePingMs = (pingMs + 3 * averagePingMs) / 4;
+			
+			socket.set('averagePingMs', newAveragePingMs, function () {
+				//console.log('averagePingMs: ' + averagePingMs + '->' + newAveragePingMs);
+			});
+		});
+		
 	});
 	
 	var timer = setInterval(function() {
-		socket.emit('clientPing', {startTime: Date.now()});
+		socket.get('averagePingMs', function (err, averagePingMs) {
+			socket.emit('clientPing', {startTime: Date.now(), averagePingMs: averagePingMs});
+		});
 	}, 2000);
 
 });
