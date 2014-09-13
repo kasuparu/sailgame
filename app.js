@@ -49,8 +49,19 @@ var nodeUniqueId = '{'+app.get('host')+':'+app.get('port')+'}';
 
 var io = require('socket.io').listen(server);
 
+var ships = [];
+
 io.sockets.on('connection', function (socket) {
 
+	socket.on('joinGame', function (data) {
+		var ship = new Object();
+		ship.id = socket.id;
+		ships.push(ship);
+		console.log('joinOk: ' + socket.id);
+		
+		socket.emit('joinOk');
+    });
+	
 	socket.on('controlsSend', function (dataObj) {
 		//console.log('controlsSend: ' + JSON.stringify(dataObj));
 		// TODO Apply controls
@@ -77,6 +88,20 @@ io.sockets.on('connection', function (socket) {
 			socket.emit('clientPing', {startTime: Date.now(), averagePingMs: averagePingMs});
 		});
 	}, 2000);
+	
+	socket.on('disconnect', function() {        
+		var len = 0;
+
+		for (var i = 0, len = ships.length; i < len; ++i) {
+			var ship = ships[i];
+
+			if (ship.id == socket.id) {
+				console.log('disconnect: ' + ship.id);
+				ships.splice(i, 1);
+				break;
+			}
+		}
+	});
 
 });
 
