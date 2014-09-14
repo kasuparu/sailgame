@@ -29,6 +29,7 @@ BasicGame.Game = function (game) {
 	self.eventQueue;
 	self.ships;
 	self.playerShipId;
+	self.bodySendTime;
 
     //	You can use any of these from any function within this State.
     //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
@@ -43,6 +44,7 @@ var waterColorLight = '#1F96C1';
 var waterColorDark = '#25A1C6';
 var waterBitmapSize = 196;
 var epsilonDegrees = 0.001;
+var worldSize = 10000;
 
 Ship = function (id, game, x, y) {
 	x = x || 0;
@@ -372,10 +374,24 @@ BasicGame.Game.prototype = {
 		self.socket.on('joinOk', function (data) {
 			self.playerShipId = self.socket.socket.sessionid;
 			console.log('joinOk: ' + self.playerShipId);
+			console.log('players: ' + data.ships.length);
+			
+			var len = 0;
+		
+			for (var i = 0, len = data.ships.length; i < len; ++i) {
+				
+				if (data.ships[i].id !== self.playerShipId) {
+					// TODO apply body params
+					console.log('player ship added: ' + data.ships[i].id);
+					var ship = new Ship(data.ships[i].id, self.game, -worldSize/4, worldSize/4);
+							
+					self.ships.push(ship);
+				}
+			}
+			
 			var playerShip = new Ship(self.playerShipId, self.game, -worldSize/4, worldSize/4);
 			
 			self.ships.push(playerShip);
-			
 		
 			self.game.camera.follow(playerShip.shipBody);
 			self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
@@ -388,7 +404,31 @@ BasicGame.Game.prototype = {
 			//console.log('eventQueue push: ' + JSON.stringify(event));
 		});
 		
-		var worldSize = 10000;
+		self.socket.on('bodyReceive', function (data) {
+			var event = new Event('bodyReceive', data);
+			
+			self.eventQueue.push(event);
+			//console.log('eventQueue push: ' + JSON.stringify(event));
+		});
+		
+		self.socket.on('playerJoined', function (data) {
+			var event = new Event('playerJoined', data);
+			
+			self.eventQueue.push(event);
+			//console.log('eventQueue push: ' + JSON.stringify(event));
+		});
+		
+		self.socket.on('playerDisconnected', function (data) {
+			var event = new Event('playerDisconnected', data);
+			
+			self.eventQueue.push(event);
+			//console.log('eventQueue push: ' + JSON.stringify(event));
+		});
+		
+		self.socket.on('error', function (data) {
+			console.log(data || 'error');
+			alert('Socket error');
+		});
 		
 		self.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
 		
@@ -413,17 +453,47 @@ BasicGame.Game.prototype = {
 		//timer = self.game.time.create(false);
 		//timer.start();
 		self.game.time.advancedTiming = true;
+		
+		self.bodySendTime = self.game.time.now;
 	},
 
 	update: function () {
 
 		var self = this;
 		
+		var playerShip;
+		
 		var previousControls = new Controls(self.controls);
 		self.controls.update(self.cursors, previousControls, self.eventQueue);
 		
+		var len = 0;
+		
+		for (var i = 0, len = self.ships.length; i < len; ++i) {
+			self.ships[i].update();
+			
+			if (self.ships[i].id === self.playerShipId) {
+				playerShip = self.ships[i];
+			}
+		}
+		
+		if (playerShip && (self.game.time.now > self.bodySendTime + 250)) {
+			self.bodySendTime = self.game.time.now;
+			
+			var event = new Event(
+				'bodySend',
+				{
+					'x': playerShip.shipBody.x,
+					'y': playerShip.shipBody.y,
+					'rotation': playerShip.shipBody.rotation,
+					'currentSpeed': playerShip.currentSpeed
+				}
+			);
+			
+			self.eventQueue.push(event);
+		}
+		
 		while (event = self.eventQueue.pop()) {
-			console.log('eventQueue pop: ' + JSON.stringify(event));
+			//console.log('eventQueue pop: ' + JSON.stringify(event));
 			
 			switch (event.type) {
 				case 'controlsSend':
@@ -446,26 +516,81 @@ BasicGame.Game.prototype = {
 					}
 					
 					break;
+				
+				case 'bodySend':
+					event.data.id = self.playerShipId;
+					self.socket.emit('bodySend', event.data);
+					break;
+				
+				case 'bodyReceive':
+					var len = 0;
+
+					for (var i = 0, len = self.ships.length; i < len; ++i) {
+						var ship = self.ships[i];
+
+						
+						// TODO Apply to playerShip too when server physics are available
+						if (ship.id === event.data.id && (!playerShip || ship.id !== self.playerShipId)) {
+							ship.shipBody.x = event.data.x;
+							ship.shipBody.x = event.data.x;
+							ship.shipBody.rotation = event.data.rotation;
+							ship.currentSpeed = event.data.currentSpeed;
+							
+							break;
+						}
+					}
+					
+					break;
+					
+				case 'playerJoined':
+					console.log('playerJoined: ' + event.data.id);
+					
+					var found = false;
+					
+					var len = 0;
+
+					for (var i = 0, len = self.ships.length; i < len; ++i) {
+						var ship = self.ships[i];
+
+						if (ship.id === event.data.id) {
+							found = true;
+							
+							break;
+						}
+					}
+					
+					if (!found && event.data.id !== self.playerShipId) {
+						console.log('player ship added: ' + event.data.id);
+						
+						var ship = new Ship(event.data.id, self.game, -worldSize/4, worldSize/4);
+						
+						self.ships.push(ship);
+					}
+					
+					break;
+				
+				case 'playerDisconnected':
+					console.log('playerDisconnected: ' + event.data.id);
+					
+					var len = 0;
+
+					for (var i = 0, len = self.ships.length; i < len; ++i) {
+						var ship = self.ships[i];
+
+						if (ship.id === event.data.id) {
+							console.log('playerDisconnected: ' + ship.id);
+							//TODO Destroy ship (delete sprites etc)
+							self.ships.splice(i, 1);
+							
+							break;
+						}
+					}
+					
+					break;
 			}
 		};
 		
-		for (var i = 0, len = self.ships.length; i < len; ++i) {
-			self.ships[i].update();
-		}
 		
-		if (false) {
-			// TODO Check for socket overflow
-			// TODO Avoid emitting if disconnected (messages do stack up)
-			
-			self.socket.emit('clientData', {
-				'x': playerShip.shipBody.x,
-				'y': playerShip.shipBody.y,
-				'rotation': playerShip.shipBody.rotation,
-				'currentSpeed': playerShip.currentSpeed
-			}, function () {
-				// empty callback to count ackPackets
-			});
-		}
 		
 	},
 	
@@ -507,7 +632,8 @@ BasicGame.Game.prototype = {
 			//'windCase': windSailCase(shipVector, windVector),
 			//'socketConnected': 'undefined' !== typeof self.socket ? !self.socket.disconnected : false,
 			//'socketAckPackets': 'undefined' !== typeof self.socket ? self.socket.ackPackets : 0,
-			'averagePingMs': self.averagePingMs
+			'averagePingMs': self.averagePingMs,
+			'players': self.ships.length + ' (' + self.ships.map(function (v) {return v.id;}).join(', ') + ')'
 		};
 		
 		var count = 0;

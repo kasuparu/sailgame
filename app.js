@@ -59,13 +59,21 @@ io.sockets.on('connection', function (socket) {
 		ships.push(ship);
 		console.log('joinOk: ' + socket.id);
 		
-		socket.emit('joinOk');
+		socket.emit('joinOk', {ships: ships}); // TODO: tell about existing players
+		
+		socket.broadcast.emit('playerJoined', {id: socket.id})
     });
 	
 	socket.on('controlsSend', function (dataObj) {
 		//console.log('controlsSend: ' + JSON.stringify(dataObj));
 		// TODO Apply controls
 		socket.emit('controlsReceive', dataObj);
+		socket.broadcast.emit('controlsReceive', dataObj);
+	});
+	
+	socket.on('bodySend', function (dataObj) {
+		// TODO Apply body
+		socket.broadcast.emit('bodyReceive', dataObj);
 	});
 	
 	socket.on('clientPong', function (startTime) {
@@ -101,6 +109,8 @@ io.sockets.on('connection', function (socket) {
 				break;
 			}
 		}
+		
+		socket.broadcast.emit('playerDisconnected', {id: socket.id})
 	});
 
 });
