@@ -284,6 +284,58 @@ var windSailPressureProjected = function (shipVector, sailVector, windVector) {
 	return Math.cos(shipSailAngle) * windSailPressureNormalized(sailVector, windVector);
 };
 
+var forElementWithId = function (array, id, callback) {
+	var len = 0;
+
+	for (var i = 0, len = array.length; i < len; ++i) {
+		var element = array[i];
+
+		if (element.id === id) {
+			callback(element, i);
+			
+			break;
+		}
+	}
+};
+
+var syncShipsWithServer = function (selfShips, serverShips) {
+	var shipsToDelete = selfShips;
+	
+	var len = 0;
+
+	for (var i = 0, len = serverShips.length; i < len; ++i) {
+		var ship = serverShips[i];
+		
+		var found = false;
+
+		// Fing ship with this id in selfShips
+		forElementWithId(selfShips, ship.id, function (selfShip) {
+			found = true;
+			
+			// If found, remove from shipsToDelete
+			forElementWithId(shipsToDelete, ship.id, function (shipToDelete, index) {
+				shipsToDelete.splice(index, 1);
+			});
+		});
+		
+		// If not found, add ship
+		if (!found) {
+			// TODO apply body params
+			console.log('player ship added: ' + data.ships[i].id);
+			var ship = new Ship(data.ships[i].id, self.game, -worldSize/4, worldSize/4);
+					
+			self.ships.push(ship);
+		}
+	}
+	
+	// Delete all shipsToDelete left
+	shipsToDelete.forEach(function (shipToDelete) {
+		forElementWithId(selfShips, shipToDelete.id, function (ship, index) {
+			selfShips.splice(index, 1);
+		});
+	});
+};
+
 Gui = function (game, x, y) {
 	this.game = game;
 	
@@ -379,22 +431,17 @@ BasicGame.Game.prototype = {
 			var len = 0;
 		
 			for (var i = 0, len = data.ships.length; i < len; ++i) {
+				// TODO apply body params
+				console.log('player ship added: ' + data.ships[i].id);
+				var ship = new Ship(data.ships[i].id, self.game, -worldSize/4, worldSize/4);
+						
+				self.ships.push(ship);
 				
-				if (data.ships[i].id !== self.playerShipId) {
-					// TODO apply body params
-					console.log('player ship added: ' + data.ships[i].id);
-					var ship = new Ship(data.ships[i].id, self.game, -worldSize/4, worldSize/4);
-							
-					self.ships.push(ship);
+				if (data.ships[i].id === self.playerShipId) {
+					self.game.camera.follow(playerShip.shipBody);
+					self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
 				}
 			}
-			
-			var playerShip = new Ship(self.playerShipId, self.game, -worldSize/4, worldSize/4);
-			
-			self.ships.push(playerShip);
-		
-			self.game.camera.follow(playerShip.shipBody);
-			self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
 		});
 		
 		self.socket.on('controlsReceive', function (data) {
