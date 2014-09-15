@@ -298,7 +298,7 @@ var forElementWithId = function (array, id, callback) {
 	}
 };
 
-var syncShipsWithServer = function (selfShips, serverShips) {
+var syncShipsWithServer = function (selfShips, serverShips, game) {
 	var shipsToDelete = selfShips;
 	
 	var len = 0;
@@ -321,10 +321,10 @@ var syncShipsWithServer = function (selfShips, serverShips) {
 		// If not found, add ship
 		if (!found) {
 			// TODO apply body params
-			console.log('player ship added: ' + data.ships[i].id);
-			var ship = new Ship(data.ships[i].id, self.game, -worldSize/4, worldSize/4);
+			console.log('player ship added: ' + serverShips[i].id);
+			var ship = new Ship(serverShips[i].id, game, -worldSize/4, worldSize/4); // TODO worldSize
 					
-			self.ships.push(ship);
+			selfShips.push(ship);
 		}
 	}
 	
