@@ -61,7 +61,7 @@ io.sockets.on('connection', function (socket) {
 		
 		socket.emit('joinOk', {ships: ships}); // TODO: tell about existing players
 		
-		socket.broadcast.emit('playerJoined', {id: socket.id})
+		socket.broadcast.emit('playerListChange', {ships: ships});
     });
 	
 	socket.on('controlsSend', function (dataObj) {
@@ -110,7 +110,7 @@ io.sockets.on('connection', function (socket) {
 			}
 		}
 		
-		socket.broadcast.emit('playerDisconnected', {id: socket.id})
+		socket.broadcast.emit('playerListChange', {ships: ships});
 	});
 
 });

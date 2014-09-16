@@ -308,7 +308,7 @@ var syncShipsWithServer = function (selfShips, serverShips, game) {
 		
 		var found = false;
 
-		// Fing ship with this id in selfShips
+		// Find ship with this id in selfShips
 		forElementWithId(selfShips, ship.id, function (selfShip) {
 			found = true;
 			
@@ -425,23 +425,14 @@ BasicGame.Game.prototype = {
 		
 		self.socket.on('joinOk', function (data) {
 			self.playerShipId = self.socket.socket.sessionid;
-			console.log('joinOk: ' + self.playerShipId);
-			console.log('players: ' + data.ships.length);
+			console.log('joinOk: ' + self.playerShipId + ' players: ' + data.ships.length);
 			
-			var len = 0;
-		
-			for (var i = 0, len = data.ships.length; i < len; ++i) {
-				// TODO apply body params
-				console.log('player ship added: ' + data.ships[i].id);
-				var ship = new Ship(data.ships[i].id, self.game, -worldSize/4, worldSize/4);
-						
-				self.ships.push(ship);
-				
-				if (data.ships[i].id === self.playerShipId) {
-					self.game.camera.follow(playerShip.shipBody);
-					self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
-				}
-			}
+			syncShipsWithServer(self.ships, data.ships, self.game);
+			
+			forElementWithId(ships, self.playerShipId, function (playerShip) {
+				self.game.camera.follow(playerShip.shipBody);
+				self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
+			});
 		});
 		
 		self.socket.on('controlsReceive', function (data) {
@@ -458,18 +449,10 @@ BasicGame.Game.prototype = {
 			//console.log('eventQueue push: ' + JSON.stringify(event));
 		});
 		
-		self.socket.on('playerJoined', function (data) {
-			var event = new Event('playerJoined', data);
+		self.socket.on('playerListChange', function (data) {
+			var event = new Event('playerListChange', data);
 			
 			self.eventQueue.push(event);
-			//console.log('eventQueue push: ' + JSON.stringify(event));
-		});
-		
-		self.socket.on('playerDisconnected', function (data) {
-			var event = new Event('playerDisconnected', data);
-			
-			self.eventQueue.push(event);
-			//console.log('eventQueue push: ' + JSON.stringify(event));
 		});
 		
 		self.socket.on('error', function (data) {
@@ -575,7 +558,6 @@ BasicGame.Game.prototype = {
 					for (var i = 0, len = self.ships.length; i < len; ++i) {
 						var ship = self.ships[i];
 
-						
 						// TODO Apply to playerShip too when server physics are available
 						if (ship.id === event.data.id && (!playerShip || ship.id !== self.playerShipId)) {
 							ship.shipBody.x = event.data.x;
@@ -589,49 +571,10 @@ BasicGame.Game.prototype = {
 					
 					break;
 					
-				case 'playerJoined':
-					console.log('playerJoined: ' + event.data.id);
+				case 'playerListChange':
+					console.log('playerListChange: ' + event.data + ' players: ' + data.ships.length);
 					
-					var found = false;
-					
-					var len = 0;
-
-					for (var i = 0, len = self.ships.length; i < len; ++i) {
-						var ship = self.ships[i];
-
-						if (ship.id === event.data.id) {
-							found = true;
-							
-							break;
-						}
-					}
-					
-					if (!found && event.data.id !== self.playerShipId) {
-						console.log('player ship added: ' + event.data.id);
-						
-						var ship = new Ship(event.data.id, self.game, -worldSize/4, worldSize/4);
-						
-						self.ships.push(ship);
-					}
-					
-					break;
-				
-				case 'playerDisconnected':
-					console.log('playerDisconnected: ' + event.data.id);
-					
-					var len = 0;
-
-					for (var i = 0, len = self.ships.length; i < len; ++i) {
-						var ship = self.ships[i];
-
-						if (ship.id === event.data.id) {
-							console.log('playerDisconnected: ' + ship.id);
-							//TODO Destroy ship (delete sprites etc)
-							self.ships.splice(i, 1);
-							
-							break;
-						}
-					}
+					syncShipsWithServer(self.ships, data.ships, self.game);
 					
 					break;
 			}
