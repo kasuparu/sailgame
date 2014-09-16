@@ -299,7 +299,7 @@ var forElementWithId = function (array, id, callback) {
 };
 
 var syncShipsWithServer = function (selfShips, serverShips, game) {
-	var shipsToDelete = selfShips;
+	var shipsToDelete = selfShips.slice();
 	
 	var len = 0;
 
@@ -314,6 +314,7 @@ var syncShipsWithServer = function (selfShips, serverShips, game) {
 			
 			// If found, remove from shipsToDelete
 			forElementWithId(shipsToDelete, ship.id, function (shipToDelete, index) {
+				console.log('keeping ship ' + ship.id);
 				shipsToDelete.splice(index, 1);
 			});
 		});
@@ -321,16 +322,21 @@ var syncShipsWithServer = function (selfShips, serverShips, game) {
 		// If not found, add ship
 		if (!found) {
 			// TODO apply body params
-			console.log('player ship added: ' + serverShips[i].id);
 			var ship = new Ship(serverShips[i].id, game, -worldSize/4, worldSize/4); // TODO worldSize
 					
 			selfShips.push(ship);
+			console.log('adding ship ' + ship.id);
+			
+			forElementWithId(shipsToDelete, ship.id, function (shipToDelete, index) {
+				shipsToDelete.splice(index, 1);
+			});
 		}
 	}
 	
 	// Delete all shipsToDelete left
 	shipsToDelete.forEach(function (shipToDelete) {
 		forElementWithId(selfShips, shipToDelete.id, function (ship, index) {
+			console.log('removing ship ' + ship.id);
 			selfShips.splice(index, 1);
 		});
 	});
@@ -428,8 +434,10 @@ BasicGame.Game.prototype = {
 			console.log('joinOk: ' + self.playerShipId + ' players: ' + data.ships.length);
 			
 			syncShipsWithServer(self.ships, data.ships, self.game);
+			console.log('players: ' + self.ships.length);
 			
-			forElementWithId(ships, self.playerShipId, function (playerShip) {
+			forElementWithId(self.ships, self.playerShipId, function (playerShip) {
+				console.log('player ship added: ' + playerShip.id);
 				self.game.camera.follow(playerShip.shipBody);
 				self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
 			});
@@ -506,6 +514,8 @@ BasicGame.Game.prototype = {
 			}
 		}
 		
+		// TODO forElementWithId
+		
 		if (playerShip && (self.game.time.now > self.bodySendTime + 250)) {
 			self.bodySendTime = self.game.time.now;
 			
@@ -545,6 +555,8 @@ BasicGame.Game.prototype = {
 						}
 					}
 					
+					// TODO forElementWithId
+					
 					break;
 				
 				case 'bodySend':
@@ -569,12 +581,14 @@ BasicGame.Game.prototype = {
 						}
 					}
 					
+					// TODO forElementWithId
+					
 					break;
 					
 				case 'playerListChange':
-					console.log('playerListChange: ' + event.data + ' players: ' + data.ships.length);
+					console.log('playerListChange: ' + event.data + ' players: ' + event.data.ships.length);
 					
-					syncShipsWithServer(self.ships, data.ships, self.game);
+					syncShipsWithServer(self.ships, event.data.ships, self.game);
 					
 					break;
 			}
@@ -598,6 +612,8 @@ BasicGame.Game.prototype = {
 				break;
 			}
 		}
+		
+		// TODO forElementWithId
 		
 		if (playerShip) {
 			var shipVector = rotationToVector(playerShip.shipBody.rotation);
