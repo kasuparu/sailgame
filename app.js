@@ -2,10 +2,10 @@
 var fs = require('fs');
 
 if (fs.existsSync('./config/config.js')) {
-var config = require('./config/config')
-} 
- else {
-  var config = require('./config/config.js.dist')};
+	var config = require('./config/config');
+} else {
+	var config = require('./config/config.js.dist');
+};
 
 
 global.config = config;
