@@ -8,7 +8,7 @@ config.api = {};
 
 config.loglevel = 'info';
 
-config.web.node.port = process.env.NODE_PORT || 3000;
-config.web.node.host = process.env.NODE_HOST || 'localhost';
+config.web.node.port = process.env.PORT || 3000;
+config.web.node.host = process.env.HOST || 'localhost';
 
 module.exports = config;
