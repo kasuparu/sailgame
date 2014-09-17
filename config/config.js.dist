@@ -9,6 +9,6 @@ config.api = {};
 config.loglevel = 'info';
 
 config.web.node.port = process.env.PORT || 3000;
-config.web.node.host = process.env.HOST || 'localhost';
+config.web.node.host = process.env.HOST || '';
 
 module.exports = config;
