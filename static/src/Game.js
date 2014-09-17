@@ -580,14 +580,14 @@ BasicGame.Game.prototype = {
 		debugObj.averagePingMs = self.averagePingMs;
 		debugObj.players = self.ships.length + ' (' + self.ships.map(function (v) {return v.id;}).join(', ') + ')';
 		
-		forElementWithId(self.ships, event.data.id, function (playerShip) {
+		forElementWithId(self.ships, self.playerShipId, function (playerShip) {
 			var shipVector = rotationToVector(playerShip.shipBody.rotation);
 			var windVector = getWindVector(playerShip.shipBody.body.position);
 			var sailVector = rotationToVector(playerShip.sail1.rotation);
 			
 			debugObj.position = playerShip.shipBody.body.position;
 			debugObj.sailState = playerShip.sailState;
-			debugObj.windSailPressureProjected = playerShip.windSailPressureProjected(shipVector, sailVector, windVector);
+			debugObj.windSailPressureProjected = windSailPressureProjected(shipVector, sailVector, windVector);
 			
 			gui.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector, self.socket);
 		});
