@@ -18,8 +18,7 @@ var loglevel = 'development' === process.env.env ? 'info' : (config.loglevel || 
 
 var logger = new (winston.Logger)({
     transports: [
-        new (winston.transports.File)({
-            filename: 'app.log',
+        new (winston.transports.Console)({
             level: loglevel
         })
     ]
