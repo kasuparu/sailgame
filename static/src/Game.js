@@ -504,33 +504,27 @@ BasicGame.Game.prototype = {
 		var previousControls = new Controls(self.controls);
 		self.controls.update(self.cursors, previousControls, self.eventQueue);
 		
-		var len = 0;
+		self.ships.forEach(function (ship) {
+			ship.update();
+		});
 		
-		for (var i = 0, len = self.ships.length; i < len; ++i) {
-			self.ships[i].update();
-			
-			if (self.ships[i].id === self.playerShipId) {
-				playerShip = self.ships[i];
+		forElementWithId(self.ships, self.playerShipId, function (playerShip) {
+			if (self.game.time.now > self.bodySendTime + 250) {
+				self.bodySendTime = self.game.time.now;
+				
+				var event = new Event(
+					'bodySend',
+					{
+						'x': playerShip.shipBody.x,
+						'y': playerShip.shipBody.y,
+						'rotation': playerShip.shipBody.rotation,
+						'currentSpeed': playerShip.currentSpeed
+					}
+				);
+				
+				self.eventQueue.push(event);
 			}
-		}
-		
-		// TODO forElementWithId
-		
-		if (playerShip && (self.game.time.now > self.bodySendTime + 250)) {
-			self.bodySendTime = self.game.time.now;
-			
-			var event = new Event(
-				'bodySend',
-				{
-					'x': playerShip.shipBody.x,
-					'y': playerShip.shipBody.y,
-					'rotation': playerShip.shipBody.rotation,
-					'currentSpeed': playerShip.currentSpeed
-				}
-			);
-			
-			self.eventQueue.push(event);
-		}
+		});
 		
 		while (event = self.eventQueue.pop()) {
 			//console.log('eventQueue pop: ' + JSON.stringify(event));
@@ -542,20 +536,10 @@ BasicGame.Game.prototype = {
 					break;
 				
 				case 'controlsReceive':
-					var len = 0;
-
-					for (var i = 0, len = self.ships.length; i < len; ++i) {
-						var ship = self.ships[i];
-
-						if (ship.id == event.data.id) {
-							ship.controls.steering = event.data.steering;
-							ship.controls.sailState = event.data.sailState;
-							
-							break;
-						}
-					}
-					
-					// TODO forElementWithId
+					forElementWithId(self.ships, event.data.id, function (ship) {
+						ship.controls.steering = event.data.steering;
+						ship.controls.sailState = event.data.sailState;
+					});
 					
 					break;
 				
@@ -565,23 +549,15 @@ BasicGame.Game.prototype = {
 					break;
 				
 				case 'bodyReceive':
-					var len = 0;
-
-					for (var i = 0, len = self.ships.length; i < len; ++i) {
-						var ship = self.ships[i];
-
+					forElementWithId(self.ships, event.data.id, function (ship) {
 						// TODO Apply to playerShip too when server physics are available
-						if (ship.id === event.data.id && (!playerShip || ship.id !== self.playerShipId)) {
+						if (ship.id !== self.playerShipId) {
 							ship.shipBody.x = event.data.x;
 							ship.shipBody.x = event.data.x;
 							ship.shipBody.rotation = event.data.rotation;
 							ship.currentSpeed = event.data.currentSpeed;
-							
-							break;
 						}
-					}
-					
-					// TODO forElementWithId
+					});
 					
 					break;
 					
@@ -593,66 +569,33 @@ BasicGame.Game.prototype = {
 					break;
 			}
 		};
-		
-		
-		
 	},
 	
 	render: function () {
 		var self = this;
 		
-		var playerShip;
+		var debugObj = {};
 		
-		for (var i = 0, len = self.ships.length; i < len; ++i) {
-			var ship = self.ships[i];
-
-			if (ship.id == self.playerShipId) {
-				playerShip = ship;
-				
-				break;
-			}
-		}
+		debugObj.fps = self.game.time.fps;
+		debugObj.averagePingMs = self.averagePingMs;
+		debugObj.players = self.ships.length + ' (' + self.ships.map(function (v) {return v.id;}).join(', ') + ')';
 		
-		// TODO forElementWithId
-		
-		if (playerShip) {
+		forElementWithId(self.ships, event.data.id, function (playerShip) {
 			var shipVector = rotationToVector(playerShip.shipBody.rotation);
 			var windVector = getWindVector(playerShip.shipBody.body.position);
 			var sailVector = rotationToVector(playerShip.sail1.rotation);
-		}
-		
-		var debugObj = {
-			'fps': self.game.time.fps,
-			'position': playerShip ? playerShip.shipBody.body.position : 'N/A',
-			//'velocity': playerShip.body.velocity,
-			//'shipAngle': playerShip.shipBody.rotation / Math.PI * 180,
-			//'windAngle': windRotation(playerShip.shipBody.body.position) / Math.PI * 180,
-			//'shipWindAngle': angle(shipVector, windVector, 'asDegrees'),
-			//'sailAngle': playerShip.sail1.rotation / Math.PI * 180,
-			//'shipSailAngle': angle(shipVector, sailVector, 'asDegrees'),
-			//'sailWindAngle': angle(sailVector, windVector, 'asDegrees'),
-			'sailState': playerShip ? playerShip.sailState : 'N/A',
-			//'windSailPressureNormalized': windSailPressureNormalized(sailVector, windVector),
-			'windSailPressureProjected': playerShip ? windSailPressureProjected(shipVector, sailVector, windVector) : 'N/A',
-			//'velocity': playerShip.shipBody.body.velocity,
-			//'windCase': windSailCase(shipVector, windVector),
-			//'socketConnected': 'undefined' !== typeof self.socket ? !self.socket.disconnected : false,
-			//'socketAckPackets': 'undefined' !== typeof self.socket ? self.socket.ackPackets : 0,
-			'averagePingMs': self.averagePingMs,
-			'players': self.ships.length + ' (' + self.ships.map(function (v) {return v.id;}).join(', ') + ')'
-		};
+			
+			debugObj.position = playerShip.shipBody.body.position;
+			debugObj.sailState = playerShip.sailState;
+			debugObj.windSailPressureProjected = playerShip.windSailPressureProjected(shipVector, sailVector, windVector);
+			
+			gui.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector, self.socket);
+		});
 		
 		var count = 0;
 		
 		for (var debugKey in debugObj) {
 			self.game.debug.text(debugKey + ': ' + debugObj[debugKey], 32, ++count * 16);
-		}
-		
-		//self.game.debug.spriteInfo(playerSail1, 32, 700);
-		//self.game.debug.spriteInfo(playerSail2, 700, 700);
-		
-		if (playerShip) {
-			gui.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector, self.socket);
 		}
 	},
 
