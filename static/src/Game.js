@@ -1,9 +1,10 @@
-
 BasicGame.Game = function (game) {
 
 	//	When a State is added to Phaser it automatically has the following properties set on it, even if they already exist:
 
     var self = this;
+	
+	// Phaser game variables
 	
 	self.game;		//	a reference to the currently running game
     self.add;		//	used to add sprites, text, groups, etc
@@ -21,6 +22,11 @@ BasicGame.Game = function (game) {
     self.physics;	//	the physics manager
     self.rnd;		//	the repeatable random number generator
 	
+	//	You can use any of these from any function within this State.
+    //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
+	
+	// Game logic variables
+	
 	self.cursors;
 	self.io;
 	self.socket;
@@ -31,20 +37,19 @@ BasicGame.Game = function (game) {
 	self.playerShipId;
 	self.bodySendTime;
 
-    //	You can use any of these from any function within this State.
-    //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
-
 };
 
-var windSpeed = 64;
-var sailStep = 5;
-var sailShift = -5;
-var sailMaxTurnAngle = 60;
-var waterColorLight = '#1F96C1';
-var waterColorDark = '#25A1C6';
-var waterBitmapSize = 196;
-var epsilonDegrees = 0.001;
-var worldSize = 10000;
+GameLogic = {
+	windSpeed: 64,
+	sailStep: 5,
+	sailShift: -5,
+	sailMaxTurnAngle: 60,
+	epsilonDegrees: 0.001,
+	waterColorLight: '#1F96C1',
+	waterColorDark: '#25A1C6',
+	waterBitmapSize: 196,
+	worldSize: 10000
+};
 
 Ship = function (id, game, x, y) {
 	x = x || 0;
@@ -102,13 +107,13 @@ Ship.prototype.update = function (cursors) {
 		this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
 	}
 	
-	this.sail1.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (sailStep + sailShift);
-	this.sail1.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (sailStep + sailShift);
+	this.sail1.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (GameLogic.sailStep + GameLogic.sailShift);
+	this.sail1.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (GameLogic.sailStep + GameLogic.sailShift);
 	
 	this.sail1.rotation = sailRotation(shipVector, windVector);
 	
-	this.sail2.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (-sailStep + sailShift);
-	this.sail2.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (-sailStep + sailShift);
+	this.sail2.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (-GameLogic.sailStep + GameLogic.sailShift);
+	this.sail2.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (-GameLogic.sailStep + GameLogic.sailShift);
 	
 	this.sail2.rotation = sailRotation(shipVector, windVector);
 };
@@ -175,7 +180,7 @@ var windRotation = function (positionPoint) {
 
 var getWindVector = function (positionPoint) {
 	return rotationToVector(windRotation(positionPoint))
-		.multiply(windSpeed, windSpeed);
+		.multiply(GameLogic.windSpeed, GameLogic.windSpeed);
 };
 
 var rotationToVector = function (rotation) {
@@ -189,7 +194,7 @@ var vectorToRotation = function (vector, asDegrees) {
 var normalizeRotation = function (rotation) {
 	var result = rotation;
 	
-	while (Math.abs(result) > 180 + epsilonDegrees) {
+	while (Math.abs(result) > 180 + GameLogic.epsilonDegrees) {
 		result -= result / Math.abs(result) * 360;
 	}
 		
@@ -228,9 +233,9 @@ var windSailCase = function (shipVector, windVector) {
 	
 	var result = 'rear';
 	
-	if (Math.abs(shipWindAngle) > (180 - sailMaxTurnAngle) + epsilonDegrees) {
+	if (Math.abs(shipWindAngle) > (180 - GameLogic.sailMaxTurnAngle) + GameLogic.epsilonDegrees) {
 		result = 'front';
-	} else if (Math.abs(shipWindAngle) > sailMaxTurnAngle + epsilonDegrees) {
+	} else if (Math.abs(shipWindAngle) > GameLogic.sailMaxTurnAngle + GameLogic.epsilonDegrees) {
 		result = 'side';
 	}
 	
@@ -246,7 +251,7 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 	
 	switch (windCase) {
 		case 'front':
-			result = vectorToRotation(shipVector, 'asDegrees') - (180 - sailMaxTurnAngle) * shipWindAngle / Math.abs(shipWindAngle);
+			result = vectorToRotation(shipVector, 'asDegrees') - (180 - GameLogic.sailMaxTurnAngle) * shipWindAngle / Math.abs(shipWindAngle);
 			break;
 		case 'side':
 			result = result - 90 * shipWindAngle / Math.abs(shipWindAngle);
@@ -257,7 +262,7 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 	
 	var sailWindAngle = normalizeRotation(result - vectorToRotation(windVector, 'asDegrees'));
 	
-	if (Math.abs(sailWindAngle) > 90 + epsilonDegrees) {
+	if (Math.abs(sailWindAngle) > 90 + GameLogic.epsilonDegrees) {
 		result = result + 180;
 	}
 	
@@ -322,7 +327,7 @@ var syncShipsWithServer = function (selfShips, serverShips, game) {
 		// If not found, add ship
 		if (!found) {
 			// TODO apply body params
-			var ship = new Ship(serverShips[i].id, game, -worldSize/4, worldSize/4); // TODO worldSize
+			var ship = new Ship(serverShips[i].id, game, -GameLogic.worldSize/4, GameLogic.worldSize/4);
 					
 			selfShips.push(ship);
 			console.log('adding ship ' + ship.id);
@@ -439,7 +444,7 @@ BasicGame.Game.prototype = {
 			forElementWithId(self.ships, self.playerShipId, function (playerShip) {
 				console.log('player ship added: ' + playerShip.id);
 				self.game.camera.follow(playerShip.shipBody);
-				self.game.camera.focusOnXY(-worldSize/4, worldSize/4);
+				self.game.camera.focusOnXY(-GameLogic.worldSize/4, GameLogic.worldSize/4);
 			});
 		});
 		
@@ -468,20 +473,20 @@ BasicGame.Game.prototype = {
 			alert('Socket error');
 		});
 		
-		self.game.world.setBounds(-worldSize/2, -worldSize/2, worldSize, worldSize);
+		self.game.world.setBounds(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize);
 		
-		var waterBitmap = self.game.add.bitmapData(waterBitmapSize, waterBitmapSize);
+		var waterBitmap = self.game.add.bitmapData(GameLogic.waterBitmapSize, GameLogic.waterBitmapSize);
 
-		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, waterBitmapSize - 1, waterBitmapSize - 1);
-		waterGradient.addColorStop(0, waterColorLight);
-		waterGradient.addColorStop(0.25, waterColorDark);
-		waterGradient.addColorStop(0.5, waterColorLight);
-		waterGradient.addColorStop(0.75, waterColorDark);
-		waterGradient.addColorStop(1, waterColorLight);
+		var waterGradient = waterBitmap.context.createLinearGradient(0, 0, GameLogic.waterBitmapSize - 1, GameLogic.waterBitmapSize - 1);
+		waterGradient.addColorStop(0, GameLogic.waterColorLight);
+		waterGradient.addColorStop(0.25, GameLogic.waterColorDark);
+		waterGradient.addColorStop(0.5, GameLogic.waterColorLight);
+		waterGradient.addColorStop(0.75, GameLogic.waterColorDark);
+		waterGradient.addColorStop(1, GameLogic.waterColorLight);
 		waterBitmap.context.fillStyle = waterGradient;
-		waterBitmap.context.fillRect(0, 0, waterBitmapSize - 1, waterBitmapSize - 1);
+		waterBitmap.context.fillRect(0, 0, GameLogic.waterBitmapSize - 1, GameLogic.waterBitmapSize - 1);
 
-		water = self.game.add.tileSprite(-worldSize/2, -worldSize/2, worldSize, worldSize, waterBitmap);
+		water = self.game.add.tileSprite(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize, waterBitmap);
 		
 		gui = new Gui(self.game, 50, 768 - 50);
 		
