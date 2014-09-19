@@ -90,7 +90,7 @@ Ship = function (id, game, x, y) {
 	this.controls = new Controls();
 };
 
-Ship.prototype.update = function (cursors) {
+Ship.prototype.update = function () {
 	var shipVector = rotationToVector(this.shipBody.rotation);
 	var windVector = getWindVector(this.shipBody.body.position);
 	var sailVector = rotationToVector(this.sail1.rotation);
@@ -103,7 +103,7 @@ Ship.prototype.update = function (cursors) {
 	
 	this.currentSpeed = this.sailState * windSailPressureProjected(shipVector, sailVector, windVector);
 
-	if (this.currentSpeed != 0) {
+	if (this.currentSpeed !== 0) {
 		this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
 	}
 	
@@ -290,8 +290,6 @@ var windSailPressureProjected = function (shipVector, sailVector, windVector) {
 };
 
 var forElementWithId = function (array, id, callback) {
-	var len = 0;
-
 	for (var i = 0, len = array.length; i < len; ++i) {
 		var element = array[i];
 
@@ -305,24 +303,26 @@ var forElementWithId = function (array, id, callback) {
 
 var syncShipsWithServer = function (selfShips, serverShips, game) {
 	var shipsToDelete = selfShips.slice();
-	
-	var len = 0;
+
+    var removeElement = function (shipToDelete, index) {
+        console.log('keeping ship ' + ship.id);
+        shipsToDelete.splice(index, 1);
+    };
+
+    var found = false;
+
+    var shipFoundCallback = function (foundShip) {
+        found = true;
+
+        // If found, remove from shipsToDelete
+        forElementWithId(shipsToDelete, foundShip.id, removeElement);
+    };
 
 	for (var i = 0, len = serverShips.length; i < len; ++i) {
-		var ship = serverShips[i];
-		
-		var found = false;
+        found = false;
 
 		// Find ship with this id in selfShips
-		forElementWithId(selfShips, ship.id, function (selfShip) {
-			found = true;
-			
-			// If found, remove from shipsToDelete
-			forElementWithId(shipsToDelete, ship.id, function (shipToDelete, index) {
-				console.log('keeping ship ' + ship.id);
-				shipsToDelete.splice(index, 1);
-			});
-		});
+		forElementWithId(selfShips, serverShips[i].id, shipFoundCallback);
 		
 		// If not found, add ship
 		if (!found) {
@@ -332,9 +332,7 @@ var syncShipsWithServer = function (selfShips, serverShips, game) {
 			selfShips.push(ship);
 			console.log('adding ship ' + ship.id);
 			
-			forElementWithId(shipsToDelete, ship.id, function (shipToDelete, index) {
-				shipsToDelete.splice(index, 1);
-			});
+			forElementWithId(shipsToDelete, ship.id, removeElement);
 		}
 	}
 	
