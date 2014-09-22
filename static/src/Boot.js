@@ -1,4 +1,4 @@
-BasicGame = {
+var BasicGame = {
 
     /* Here we've just got some global level vars that persist regardless of State swaps */
     score: 0,

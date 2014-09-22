@@ -1,3 +1,4 @@
+/*global BasicGame */
 
 BasicGame.MainMenu = function (game) {
 

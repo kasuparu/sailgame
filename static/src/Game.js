@@ -1,11 +1,15 @@
+/*global BasicGame */
+/*global Phaser */
+/*global io */
+
 BasicGame.Game = function (game) {
 
 	//	When a State is added to Phaser it automatically has the following properties set on it, even if they already exist:
 
-    var self = this;
+    //var self = this;
 	
 	// Phaser game variables
-	
+	/*
 	self.game;		//	a reference to the currently running game
     self.add;		//	used to add sprites, text, groups, etc
     self.camera;	//	a reference to the game camera
@@ -21,12 +25,12 @@ BasicGame.Game = function (game) {
     self.particles;	//	the particle manager
     self.physics;	//	the physics manager
     self.rnd;		//	the repeatable random number generator
-	
+	*/
 	//	You can use any of these from any function within this State.
     //	But do consider them as being 'reserved words', i.e. don't create a property for your own game called "world" or you'll over-write the world reference.
 	
 	// Game logic variables
-	
+	/*
 	self.cursors;
 	self.io;
 	self.socket;
@@ -36,10 +40,10 @@ BasicGame.Game = function (game) {
 	self.ships;
 	self.playerShipId;
 	self.bodySendTime;
-
+    */
 };
 
-GameLogic = {
+var GameLogic = {
 	windSpeed: 64,
 	sailStep: 5,
 	sailShift: -5,
@@ -51,7 +55,7 @@ GameLogic = {
 	worldSize: 10000
 };
 
-Ship = function (id, game, x, y) {
+var Ship = function (id, game, x, y) {
 	x = x || 0;
 	y = y || 0;
 	
@@ -91,9 +95,9 @@ Ship = function (id, game, x, y) {
 };
 
 Ship.prototype.update = function () {
-	var shipVector = rotationToVector(this.shipBody.rotation);
-	var windVector = getWindVector(this.shipBody.body.position);
-	var sailVector = rotationToVector(this.sail1.rotation);
+	var shipVector = GameLogic.rotationToVector(this.shipBody.rotation);
+	var windVector = GameLogic.getWindVector(this.shipBody.body.position);
+	var sailVector = GameLogic.rotationToVector(this.sail1.rotation);
 	
 	this.sailState = this.controls.sailState;
 	this.shipBody.angle += this.controls.steering;
@@ -101,7 +105,7 @@ Ship.prototype.update = function () {
 	this.sail1.scale.x = 0.07 * this.sailState;
 	this.sail2.scale.x = 0.09 * this.sailState;
 	
-	this.currentSpeed = this.sailState * windSailPressureProjected(shipVector, sailVector, windVector);
+	this.currentSpeed = this.sailState * GameLogic.windSailPressureProjected(shipVector, sailVector, windVector);
 
 	if (this.currentSpeed !== 0) {
 		this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
@@ -110,20 +114,20 @@ Ship.prototype.update = function () {
 	this.sail1.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (GameLogic.sailStep + GameLogic.sailShift);
 	this.sail1.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (GameLogic.sailStep + GameLogic.sailShift);
 	
-	this.sail1.rotation = sailRotation(shipVector, windVector);
+	this.sail1.rotation = GameLogic.sailRotation(shipVector, windVector);
 	
 	this.sail2.x = this.shipBody.x + Math.cos(this.shipBody.rotation) * (-GameLogic.sailStep + GameLogic.sailShift);
 	this.sail2.y = this.shipBody.y + Math.sin(this.shipBody.rotation) * (-GameLogic.sailStep + GameLogic.sailShift);
 	
-	this.sail2.rotation = sailRotation(shipVector, windVector);
+	this.sail2.rotation = GameLogic.sailRotation(shipVector, windVector);
 };
 
-Event = function (type, data) {
+var GameEvent = function (type, data) {
 	this.type = type;
 	this.data = data;
 };
 
-Controls = function (object) {
+var Controls = function (object) {
 	if ('undefined' !== typeof object) {
 		this.sailState = object.sailState;
 		this.steering = object.steering;
@@ -156,7 +160,7 @@ Controls.prototype.update = function (cursors, targetControls, eventQueue) {
 	
 	if ('undefined' !== typeof targetControls) {
 		if (this.sailState !== targetControls.sailState || this.steering !== targetControls.steering) {
-			var event = new Event(
+			var event = new GameEvent(
 				'controlsSend',
 				{
 					'steering': this.steering,
@@ -172,26 +176,26 @@ Controls.prototype.update = function (cursors, targetControls, eventQueue) {
 	}
 };
 
-var windRotation = function (positionPoint) {
-	var windVector = rotate(new Phaser.Point(-positionPoint.x, -positionPoint.y), Math.PI / 2);
+GameLogic.windRotation = function (positionPoint) {
+	var windVector = GameLogic.rotate(new Phaser.Point(-positionPoint.x, -positionPoint.y), Math.PI / 2);
 
-	return vectorToRotation(windVector);
+	return GameLogic.vectorToRotation(windVector);
 };
 
-var getWindVector = function (positionPoint) {
-	return rotationToVector(windRotation(positionPoint))
+GameLogic.getWindVector = function (positionPoint) {
+	return GameLogic.rotationToVector(GameLogic.windRotation(positionPoint))
 		.multiply(GameLogic.windSpeed, GameLogic.windSpeed);
 };
 
-var rotationToVector = function (rotation) {
+GameLogic.rotationToVector = function (rotation) {
 	return new Phaser.Point(Math.cos(rotation), Math.sin(rotation));
 };
 
-var vectorToRotation = function (vector, asDegrees) {
+GameLogic.vectorToRotation = function (vector, asDegrees) {
 	return new Phaser.Point(0, 0).angle(vector, asDegrees);
 };
 
-var normalizeRotation = function (rotation) {
+GameLogic.normalizeRotation = function (rotation) {
 	var result = rotation;
 	
 	while (Math.abs(result) > 180 + GameLogic.epsilonDegrees) {
@@ -201,7 +205,7 @@ var normalizeRotation = function (rotation) {
 	return result;
 };
 
-var angle = function (a, b, asDegrees) {
+GameLogic.angle = function (a, b, asDegrees) {
 	if (typeof asDegrees === 'undefined') {
 		asDegrees = false;
 	}
@@ -209,9 +213,9 @@ var angle = function (a, b, asDegrees) {
 	var result = 0;
 	
 	if (!a.isZero() && !b.isZero()) {
-		result = vectorToRotation(b, 'asDegrees') - vectorToRotation(a, 'asDegrees');
+		result = GameLogic.vectorToRotation(b, 'asDegrees') - GameLogic.vectorToRotation(a, 'asDegrees');
 		
-		result = normalizeRotation(result);
+		result = GameLogic.normalizeRotation(result);
 	}
 	
 	if (asDegrees) {
@@ -221,15 +225,15 @@ var angle = function (a, b, asDegrees) {
 	}
 };
 
-var rotate = function (point, angle) {
+GameLogic.rotate = function (point, angle) {
 	return new Phaser.Point(
 		point.x * Math.cos(angle) - point.y * Math.sin(angle),
 		point.x * Math.sin(angle) + point.y * Math.cos(angle)
 	);
 };
 
-var windSailCase = function (shipVector, windVector) {
-	var shipWindAngle = angle(shipVector, windVector, 'asDegrees');
+GameLogic.windSailCase = function (shipVector, windVector) {
+	var shipWindAngle = GameLogic.angle(shipVector, windVector, 'asDegrees');
 	
 	var result = 'rear';
 	
@@ -242,31 +246,32 @@ var windSailCase = function (shipVector, windVector) {
 	return result;
 };
 
-var sailRotation = function (shipVector, windVector, asDegrees) {
-	var shipWindAngle = angle(shipVector, windVector, 'asDegrees');
+GameLogic.sailRotation = function (shipVector, windVector, asDegrees) {
+	var shipWindAngle = GameLogic.angle(shipVector, windVector, 'asDegrees');
 	
-	var result = vectorToRotation(windVector, 'asDegrees');
+	var result = GameLogic.vectorToRotation(windVector, 'asDegrees');
 	
-	var windCase = windSailCase(shipVector, windVector);
+	var windCase = GameLogic.windSailCase(shipVector, windVector);
 	
 	switch (windCase) {
 		case 'front':
-			result = vectorToRotation(shipVector, 'asDegrees') - (180 - GameLogic.sailMaxTurnAngle) * shipWindAngle / Math.abs(shipWindAngle);
+			result = GameLogic.vectorToRotation(shipVector, 'asDegrees') -
+                (180 - GameLogic.sailMaxTurnAngle) * shipWindAngle / Math.abs(shipWindAngle);
 			break;
 		case 'side':
 			result = result - 90 * shipWindAngle / Math.abs(shipWindAngle);
 			break;
 	}
 	
-	result = normalizeRotation(result);
+	result = GameLogic.normalizeRotation(result);
 	
-	var sailWindAngle = normalizeRotation(result - vectorToRotation(windVector, 'asDegrees'));
+	var sailWindAngle = GameLogic.normalizeRotation(result - GameLogic.vectorToRotation(windVector, 'asDegrees'));
 	
 	if (Math.abs(sailWindAngle) > 90 + GameLogic.epsilonDegrees) {
 		result = result + 180;
 	}
 	
-	result = normalizeRotation(result);
+	result = GameLogic.normalizeRotation(result);
 	
 	if (asDegrees) {
 		return result;
@@ -275,21 +280,21 @@ var sailRotation = function (shipVector, windVector, asDegrees) {
 	}
 };
 
-var windSailPressureNormalized = function (sailVector, windVector) {
-	var sailWindAngle = angle(sailVector, windVector);
+GameLogic.windSailPressureNormalized = function (sailVector, windVector) {
+	var sailWindAngle = GameLogic.angle(sailVector, windVector);
 	
 	var cos = Math.cos(sailWindAngle);
 	
 	return (Math.pow(cos * cos, 3) + 0.4 * Math.pow(1 - cos * cos, 2)) * windVector.getMagnitude();
 };
 
-var windSailPressureProjected = function (shipVector, sailVector, windVector) {
-	var shipSailAngle = angle(shipVector, sailVector);
+GameLogic.windSailPressureProjected = function (shipVector, sailVector, windVector) {
+	var shipSailAngle = GameLogic.angle(shipVector, sailVector);
 	
-	return Math.cos(shipSailAngle) * windSailPressureNormalized(sailVector, windVector);
+	return Math.cos(shipSailAngle) * GameLogic.windSailPressureNormalized(sailVector, windVector);
 };
 
-var forElementWithId = function (array, id, callback) {
+GameLogic.forElementWithId = function (array, id, callback) {
 	for (var i = 0, len = array.length; i < len; ++i) {
 		var element = array[i];
 
@@ -301,11 +306,11 @@ var forElementWithId = function (array, id, callback) {
 	}
 };
 
-var syncShipsWithServer = function (selfShips, serverShips, game) {
+GameLogic.syncShipsWithServer = function (selfShips, serverShips, game) {
 	var shipsToDelete = selfShips.slice();
 
     var removeElement = function (shipToDelete, index) {
-        console.log('keeping ship ' + ship.id);
+        console.log('keeping ship ' + shipToDelete.id);
         shipsToDelete.splice(index, 1);
     };
 
@@ -315,14 +320,14 @@ var syncShipsWithServer = function (selfShips, serverShips, game) {
         found = true;
 
         // If found, remove from shipsToDelete
-        forElementWithId(shipsToDelete, foundShip.id, removeElement);
+        GameLogic.forElementWithId(shipsToDelete, foundShip.id, removeElement);
     };
 
 	for (var i = 0, len = serverShips.length; i < len; ++i) {
         found = false;
 
 		// Find ship with this id in selfShips
-		forElementWithId(selfShips, serverShips[i].id, shipFoundCallback);
+        GameLogic.forElementWithId(selfShips, serverShips[i].id, shipFoundCallback);
 		
 		// If not found, add ship
 		if (!found) {
@@ -331,21 +336,40 @@ var syncShipsWithServer = function (selfShips, serverShips, game) {
 					
 			selfShips.push(ship);
 			console.log('adding ship ' + ship.id);
-			
-			forElementWithId(shipsToDelete, ship.id, removeElement);
+
+            GameLogic.forElementWithId(shipsToDelete, ship.id, removeElement);
 		}
 	}
 	
 	// Delete all shipsToDelete left
 	shipsToDelete.forEach(function (shipToDelete) {
-		forElementWithId(selfShips, shipToDelete.id, function (ship, index) {
+        GameLogic.forElementWithId(selfShips, shipToDelete.id, function (ship, index) {
 			console.log('removing ship ' + ship.id);
 			selfShips.splice(index, 1);
 		});
 	});
 };
 
-Gui = function (game, x, y) {
+GameLogic.returnControlsReceiveCallback = function (event) {
+    return function (ship) {
+        ship.controls.steering = event.data.steering;
+        ship.controls.sailState = event.data.sailState;
+    };
+};
+
+GameLogic.returnBodyReceiveCallback = function (event, basicGameGame) {
+    return function (ship) {
+        // TODO Apply to playerShip too when server physics are available
+        if (ship.id !== basicGameGame.playerShipId) {
+            ship.shipBody.x = event.data.x;
+            ship.shipBody.x = event.data.x;
+            ship.shipBody.rotation = event.data.rotation;
+            ship.currentSpeed = event.data.currentSpeed;
+        }
+    };
+};
+
+var Gui = function (game, x, y) {
 	this.game = game;
 	
 	this.guiCornerLeft = new Phaser.Rectangle(0, 0, 0, 0);
@@ -364,7 +388,7 @@ Gui = function (game, x, y) {
 	this.sailVectorScale = 40;
 };
 
-Gui.prototype.render = function (x, y, shipVector, windVector, sailVector, socket) {
+Gui.prototype.render = function (x, y, shipVector, windVector, sailVector) {
 	this.guiCornerLeft.setTo(
 		this.x + x - this.guiCircleDiameter/2,
 		this.y + y,
@@ -435,11 +459,11 @@ BasicGame.Game.prototype = {
 		self.socket.on('joinOk', function (data) {
 			self.playerShipId = self.socket.socket.sessionid;
 			console.log('joinOk: ' + self.playerShipId + ' players: ' + data.ships.length);
-			
-			syncShipsWithServer(self.ships, data.ships, self.game);
+
+            GameLogic.syncShipsWithServer(self.ships, data.ships, self.game);
 			console.log('players: ' + self.ships.length);
-			
-			forElementWithId(self.ships, self.playerShipId, function (playerShip) {
+
+            GameLogic.forElementWithId(self.ships, self.playerShipId, function (playerShip) {
 				console.log('player ship added: ' + playerShip.id);
 				self.game.camera.follow(playerShip.shipBody);
 				self.game.camera.focusOnXY(-GameLogic.worldSize/4, GameLogic.worldSize/4);
@@ -447,28 +471,24 @@ BasicGame.Game.prototype = {
 		});
 		
 		self.socket.on('controlsReceive', function (data) {
-			var event = new Event('controlsReceive', data);
-			
+			var event = new GameEvent('controlsReceive', data);
 			self.eventQueue.push(event);
-			//console.log('eventQueue push: ' + JSON.stringify(event));
 		});
 		
 		self.socket.on('bodyReceive', function (data) {
-			var event = new Event('bodyReceive', data);
-			
+			var event = new GameEvent('bodyReceive', data);
 			self.eventQueue.push(event);
-			//console.log('eventQueue push: ' + JSON.stringify(event));
 		});
 		
 		self.socket.on('playerListChange', function (data) {
-			var event = new Event('playerListChange', data);
-			
+			var event = new GameEvent('playerListChange', data);
 			self.eventQueue.push(event);
 		});
 		
 		self.socket.on('error', function (data) {
 			console.log(data || 'error');
 			alert('Socket error');
+            location.reload(true);
 		});
 		
 		self.game.world.setBounds(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize);
@@ -484,9 +504,9 @@ BasicGame.Game.prototype = {
 		waterBitmap.context.fillStyle = waterGradient;
 		waterBitmap.context.fillRect(0, 0, GameLogic.waterBitmapSize - 1, GameLogic.waterBitmapSize - 1);
 
-		water = self.game.add.tileSprite(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize, waterBitmap);
+		self.water = self.game.add.tileSprite(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize, waterBitmap);
 		
-		gui = new Gui(self.game, 50, 768 - 50);
+		self.gui = new Gui(self.game, 50, 768 - 50);
 		
 		self.cursors = self.game.input.keyboard.createCursorKeys();
 		self.controls = new Controls();
@@ -502,20 +522,18 @@ BasicGame.Game.prototype = {
 
 		var self = this;
 		
-		var playerShip;
-		
 		var previousControls = new Controls(self.controls);
 		self.controls.update(self.cursors, previousControls, self.eventQueue);
 		
 		self.ships.forEach(function (ship) {
 			ship.update();
 		});
-		
-		forElementWithId(self.ships, self.playerShipId, function (playerShip) {
+
+        GameLogic.forElementWithId(self.ships, self.playerShipId, function (playerShip) {
 			if (self.game.time.now > self.bodySendTime + 250) {
 				self.bodySendTime = self.game.time.now;
 				
-				var event = new Event(
+				var event = new GameEvent(
 					'bodySend',
 					{
 						'x': playerShip.shipBody.x,
@@ -528,8 +546,10 @@ BasicGame.Game.prototype = {
 				self.eventQueue.push(event);
 			}
 		});
+
+        var event;
 		
-		while (event = self.eventQueue.pop()) {
+		while ('undefined' !== typeof (event = self.eventQueue.pop())) {
 			//console.log('eventQueue pop: ' + JSON.stringify(event));
 			
 			switch (event.type) {
@@ -539,11 +559,7 @@ BasicGame.Game.prototype = {
 					break;
 				
 				case 'controlsReceive':
-					forElementWithId(self.ships, event.data.id, function (ship) {
-						ship.controls.steering = event.data.steering;
-						ship.controls.sailState = event.data.sailState;
-					});
-					
+                    GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnControlsReceiveCallback(event));
 					break;
 				
 				case 'bodySend':
@@ -552,26 +568,15 @@ BasicGame.Game.prototype = {
 					break;
 				
 				case 'bodyReceive':
-					forElementWithId(self.ships, event.data.id, function (ship) {
-						// TODO Apply to playerShip too when server physics are available
-						if (ship.id !== self.playerShipId) {
-							ship.shipBody.x = event.data.x;
-							ship.shipBody.x = event.data.x;
-							ship.shipBody.rotation = event.data.rotation;
-							ship.currentSpeed = event.data.currentSpeed;
-						}
-					});
-					
+                    GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnBodyReceiveCallback(event, self));
 					break;
 					
 				case 'playerListChange':
 					console.log('playerListChange: ' + event.data + ' players: ' + event.data.ships.length);
-					
-					syncShipsWithServer(self.ships, event.data.ships, self.game);
-					
+                    GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game);
 					break;
 			}
-		};
+		}
 	},
 	
 	render: function () {
@@ -582,23 +587,25 @@ BasicGame.Game.prototype = {
 		debugObj.fps = self.game.time.fps;
 		debugObj.averagePingMs = self.averagePingMs;
 		debugObj.players = self.ships.length + ' (' + self.ships.map(function (v) {return v.id;}).join(', ') + ')';
-		
-		forElementWithId(self.ships, self.playerShipId, function (playerShip) {
-			var shipVector = rotationToVector(playerShip.shipBody.rotation);
-			var windVector = getWindVector(playerShip.shipBody.body.position);
-			var sailVector = rotationToVector(playerShip.sail1.rotation);
+
+        GameLogic.forElementWithId(self.ships, self.playerShipId, function (playerShip) {
+			var shipVector = GameLogic.rotationToVector(playerShip.shipBody.rotation);
+			var windVector = GameLogic.getWindVector(playerShip.shipBody.body.position);
+			var sailVector = GameLogic.rotationToVector(playerShip.sail1.rotation);
 			
 			debugObj.position = playerShip.shipBody.body.position;
 			debugObj.sailState = playerShip.sailState;
-			debugObj.windSailPressureProjected = windSailPressureProjected(shipVector, sailVector, windVector);
+			debugObj.windSailPressureProjected = GameLogic.windSailPressureProjected(shipVector, sailVector, windVector);
 			
-			gui.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector, self.socket);
+			self.gui.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector);
 		});
 		
 		var count = 0;
 		
 		for (var debugKey in debugObj) {
-			self.game.debug.text(debugKey + ': ' + debugObj[debugKey], 32, ++count * 16);
+			if (debugObj.hasOwnProperty(debugKey)) {
+                self.game.debug.text(debugKey + ': ' + debugObj[debugKey], 32, ++count * 16);
+            }
 		}
 	},
 
