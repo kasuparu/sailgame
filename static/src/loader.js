@@ -38,7 +38,8 @@ require.config({
                 'BasicGame',
                 'GameLogic',
                 'Ship',
-                'Gui',
+                'GuiVectors',
+                'GuiMinimap',
                 'GameEvent',
                 'Controls'
             ],
@@ -57,11 +58,17 @@ require.config({
             ],
             exports: 'Ship'
         },
-        'Gui': {
+        'GuiVectors': {
             deps: [
                 'Phaser'
             ],
-            exports: 'Gui'
+            exports: 'GuiVectors'
+        },
+        'GuiMinimap': {
+            deps: [
+                'Phaser'
+            ],
+            exports: 'GuiMinimap'
         },
         'GameEvent': {
             exports: 'GameEvent'

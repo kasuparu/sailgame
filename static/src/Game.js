@@ -3,7 +3,8 @@
 /*global BasicGame */
 /*global GameLogic */
 /*global Ship */
-/*global Gui */
+/*global GuiVectors */
+/*global GuiMinimap */
 /*global GameEvent */
 /*global Controls */
 
@@ -121,7 +122,18 @@ BasicGame.Game.prototype = {
 
 		self.water = self.game.add.tileSprite(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize, waterBitmap);
 		
-		self.gui = new Gui(self.game, 50, 768 - 50);
+		self.guiVectors = new GuiVectors(
+            self.game, GameLogic.guiCircleRadius,
+            768 - GameLogic.guiCircleRadius,
+            GameLogic.guiCircleRadius
+        );
+
+        self.guiMinimap = new GuiMinimap(
+            self.game,
+            1024 - GameLogic.guiMinimapRectangleSize,
+            768 - GameLogic.guiMinimapRectangleSize,
+            GameLogic.guiMinimapRectangleSize
+        );
 		
 		self.cursors = self.game.input.keyboard.createCursorKeys();
 		self.controls = new Controls();
@@ -215,7 +227,8 @@ BasicGame.Game.prototype = {
 			debugObj.sailState = playerShip.sailState;
 			debugObj.windSailPressureProjected = GameLogic.windSailPressureProjected(shipVector, sailVector, windVector);
 			
-			self.gui.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector);
+			self.guiVectors.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector);
+            self.guiMinimap.render(self.game.camera.x, self.game.camera.y, self.ships, self.playerShipId);
 		});
 		
 		var count = 0;

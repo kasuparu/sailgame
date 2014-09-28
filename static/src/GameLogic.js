@@ -9,7 +9,9 @@ var GameLogic = {
     waterColorLight: '#1F96C1',
     waterColorDark: '#25A1C6',
     waterBitmapSize: 196,
-    worldSize: 10000
+    worldSize: 10000,
+    guiMinimapRectangleSize: 100,
+    guiCircleRadius: 50
 };
 
 GameLogic.windRotation = function (positionPoint) {
