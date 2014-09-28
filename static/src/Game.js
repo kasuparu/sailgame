@@ -188,8 +188,11 @@ BasicGame.Game.prototype = {
 					
 				case 'playerListChange':
 					console.log('playerListChange: ' + event.data + ' players: ' + event.data.ships.length);
-                    GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game);
+                    GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
 					break;
+
+                default:
+                    break;
 			}
 		}
 	},
