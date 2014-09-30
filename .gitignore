@@ -1,4 +1,15 @@
 node_modules
 build
-.idea
 *.log
+
+/.idea/workspace.xml
+/.idea/vagrant.xml
+/.idea/User.xml
+/.idea/tasks.xml
+/.idea/dataSources.ids
+/.idea/dataSources.xml
+/.idea/gradle.xml
+/.idea/.name
+/.idea/dictionaries/*
+/.idea/libraries/*
+/.idea/*.iws
