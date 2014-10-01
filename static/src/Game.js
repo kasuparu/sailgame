@@ -136,6 +136,7 @@ BasicGame.Game.prototype = {
         );
 		
 		self.cursors = self.game.input.keyboard.createCursorKeys();
+		self.activePointer = self.game.input.activePointer;
 		self.controls = new Controls();
 		
 		//timer = self.game.time.create(false);
@@ -149,8 +150,10 @@ BasicGame.Game.prototype = {
 
 		var self = this;
 		
-		var previousControls = new Controls(self.controls);
-		self.controls.update(self.cursors, previousControls, self.eventQueue);
+		GameLogic.forElementWithId(self.ships, self.playerShipId, function (playerShip) {
+			var previousControls = new Controls(self.controls);
+			self.controls.update(self.cursors, previousControls, self.eventQueue, self.activePointer, playerShip);
+		});
 		
 		self.ships.forEach(function (ship) {
 			ship.update();

@@ -10,7 +10,7 @@ var Controls = function (object) {
     }
 };
 
-Controls.prototype.update = function (cursors, targetControls, eventQueue) {
+Controls.prototype.update = function (cursors, targetControls, eventQueue, activePointer, ship) {
     if (typeof cursors !== 'undefined') {
         if (cursors.left.isDown) {
             // this.shipBody.angle -= 1;
@@ -47,4 +47,12 @@ Controls.prototype.update = function (cursors, targetControls, eventQueue) {
             // TODO set timer to average ping (roundtrip / 2) to apply controls
         }
     }
+	
+	if ('undefined' !== typeof activePointer && 'undefined' !== typeof ship) {
+		if (activePointer.isDown) {
+			console.log('click: ' + activePointer.worldX + ':' + activePointer.worldY);
+			
+			// TODO Angle to pointer
+		}
+	}
 };
