@@ -54,7 +54,8 @@ require.config({
         'Ship': {
             deps: [
                 'Phaser',
-                'GameLogic'
+                'GameLogic',
+                'Controls'
             ],
             exports: 'Ship'
         },
@@ -75,7 +76,9 @@ require.config({
         },
         'Controls': {
             deps: [
-                'GameEvent'
+                'GameEvent',
+                'GameLogic',
+                'Phaser'
             ],
             exports: 'Controls'
         }

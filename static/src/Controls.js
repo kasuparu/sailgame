@@ -1,31 +1,59 @@
 /*global GameEvent */
+/*global GameLogic */
+/*global Phaser */
 
 var Controls = function (object) {
     if ('undefined' !== typeof object) {
         this.sailState = object.sailState;
         this.steering = object.steering;
+
+        this.rotation = object.rotation;
     } else {
         this.sailState = 1;
         this.steering = 0;
+
+        this.rotation = 0;
     }
+
+    this.line = new Phaser.Line(0, 0, 0, 0);
+    this.drawLine = false;
 };
 
-Controls.prototype.update = function (cursors, targetControls, eventQueue, activePointer, ship) {
+Controls.prototype.update = function (cursors, targetControls, eventQueue, activePointer, ship, game) {
     if (typeof cursors !== 'undefined') {
         if (cursors.left.isDown) {
-            // this.shipBody.angle -= 1;
             this.steering = -1;
         } else if (cursors.right.isDown) {
-            //this.shipBody.angle += 1;
             this.steering = 1;
         } else {
             this.steering = 0;
         }
+    }
 
-        if (cursors.up.isDown && this.sailState < 1) {
-            this.sailState += 0.25;
-        } else if (cursors.down.isDown && this.sailState > 0) {
-            this.sailState -= 0.25;
+    if ('undefined' !== typeof activePointer && 'undefined' !== typeof ship) {
+        if (activePointer.isDown) {
+            var activePointerPoint = new Phaser.Point(activePointer.worldX, activePointer.worldY);
+
+            console.log(ship.shipBody.position.angle(activePointerPoint));
+            console.log(ship.shipBody.position.distance(activePointerPoint));
+
+
+            this.sailState = ship.shipBody.position.distance(activePointerPoint) / 200;
+            this.sailState = this.sailState > 1 ? 1 : this.sailState;
+            this.sailState = this.sailState < 0.2 ? 0 : this.sailState;
+
+            // TODO set rotation
+
+            this.line.setTo(
+                ship.shipBody.position.x,
+                ship.shipBody.position.y,
+                activePointerPoint.x,
+                activePointerPoint.y
+            );
+
+            this.drawLine = true;
+        } else {
+            this.drawLine = false;
         }
     }
 
@@ -47,12 +75,11 @@ Controls.prototype.update = function (cursors, targetControls, eventQueue, activ
             // TODO set timer to average ping (roundtrip / 2) to apply controls
         }
     }
-	
-	if ('undefined' !== typeof activePointer && 'undefined' !== typeof ship) {
-		if (activePointer.isDown) {
-			console.log('click: ' + activePointer.worldX + ':' + activePointer.worldY);
-			
-			// TODO Angle to pointer
-		}
-	}
+
+};
+
+Controls.prototype.render = function (game) {
+   if (this.drawLine && 'undefined' !== typeof game) {
+       game.debug.geom(this.line, 'rgba(0,255,0,0.7)');
+   }
 };

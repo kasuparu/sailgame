@@ -33,7 +33,7 @@ GuiMinimap.prototype.render = function (cameraX, cameraY, ships, playerShipId) {
     self.game.debug.geom(this.guiMinimapRectangle, 'rgba(0,0,0,0.7)');
 
     ships.forEach(function (ship) {
-        var coords = self.coordToMini(ship.shipBody.x, ship.shipBody.y);
+        var coords = self.coordToMini(ship.shipBody.body.position.x, ship.shipBody.body.position.y);
         var color = ship.id !== playerShipId ? 'rgba(255,20,20,0.7)' : 'rgba(20,255,20,0.7)';
 
         self.game.debug.pixel(self.guiAnchorX + coords.x, self.guiAnchorY + coords.y, color);

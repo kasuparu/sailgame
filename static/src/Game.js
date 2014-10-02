@@ -232,6 +232,8 @@ BasicGame.Game.prototype = {
 			
 			self.guiVectors.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector);
             self.guiMinimap.render(self.game.camera.x, self.game.camera.y, self.ships, self.playerShipId);
+
+            self.controls.render(self.game);
 		});
 		
 		var count = 0;

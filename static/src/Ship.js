@@ -1,4 +1,5 @@
 /*global GameLogic */
+/*global Controls */
 
 var Ship = function (id, game, x, y) {
     x = x || 0;
