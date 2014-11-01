@@ -11,7 +11,8 @@ var GameLogic = {
     waterBitmapSize: 196,
     worldSize: 10000,
     guiMinimapRectangleSize: 100,
-    guiCircleRadius: 50
+    guiCircleRadius: 50,
+    turnRateRadMs: 2 * Math.PI / 10 / 1000 // full 360 per 10 sec in radians/ms
 };
 
 GameLogic.windRotation = function (positionPoint) {
@@ -190,7 +191,7 @@ GameLogic.syncShipsWithServer = function (selfShips, serverShips, game, ShipClas
 
 GameLogic.returnControlsReceiveCallback = function (event) {
     return function (ship) {
-        ship.controls.steering = event.data.steering;
+        ship.controls.targetRotation = event.data.targetRotation;
         ship.controls.sailState = event.data.sailState;
     };
 };
@@ -205,5 +206,9 @@ GameLogic.returnBodyReceiveCallback = function (event, basicGameGame) {
             ship.currentSpeed = event.data.currentSpeed;
         }
     };
+};
+
+GameLogic.currentTurnRate = function (currentSpeed) {
+    return Math.max(currentSpeed, 0) / GameLogic.windSpeed * GameLogic.turnRateRadMs;
 };
 

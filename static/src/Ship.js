@@ -1,3 +1,4 @@
+/*global Phaser */
 /*global GameLogic */
 /*global Controls */
 
@@ -46,7 +47,15 @@ Ship.prototype.update = function () {
     var sailVector = GameLogic.rotationToVector(this.sail1.rotation);
 
     this.sailState = this.controls.sailState;
-    this.shipBody.angle += this.controls.steering;
+
+    var deltaRotation = GameLogic.normalizeRotation(
+        Phaser.Math.radToDeg(this.controls.targetRotation - this.shipBody.rotation)
+    );
+
+    if (Math.abs(deltaRotation) > GameLogic.epsilonDegrees) {
+        this.shipBody.rotation += Math.sign(deltaRotation) *
+            GameLogic.currentTurnRate(this.currentSpeed) * this.game.time.elapsed;
+    }
 
     this.sail1.scale.x = 0.07 * this.sailState;
     this.sail2.scale.x = 0.09 * this.sailState;

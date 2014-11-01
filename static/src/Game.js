@@ -229,6 +229,7 @@ BasicGame.Game.prototype = {
 			debugObj.position = playerShip.shipBody.body.position;
 			debugObj.sailState = playerShip.sailState;
 			debugObj.windSailPressureProjected = GameLogic.windSailPressureProjected(shipVector, sailVector, windVector);
+            debugObj.currentTurnRate = GameLogic.currentTurnRate(playerShip.currentSpeed) / Math.PI * 180 * 1000;
 			
 			self.guiVectors.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector);
             self.guiMinimap.render(self.game.camera.x, self.game.camera.y, self.ships, self.playerShipId);
