@@ -62,6 +62,7 @@ BasicGame.Game.prototype = {
 		self.io = io;
 		self.socket = self.io.connect();
 		self.averagePingMs = 10;
+        self.serverTimeDiff = 0;
 		
 		self.socket.on('connect', function () {
 			self.socket.emit('joinGame');
@@ -70,6 +71,7 @@ BasicGame.Game.prototype = {
 		self.socket.on('clientPing', function (data) {
 			self.averagePingMs = 'undefined' !== typeof data.averagePingMs && null !== data.averagePingMs ? data.averagePingMs : self.averagePingMs;
 			self.socket.emit('clientPong', data.startTime);
+            self.serverTimeDiff = data.startTime + self.averagePingMs - self.game.time.now;
 		});
 		
 		self.socket.on('joinOk', function (data) {
@@ -230,6 +232,7 @@ BasicGame.Game.prototype = {
 			debugObj.sailState = playerShip.sailState;
 			debugObj.windSailPressureProjected = GameLogic.windSailPressureProjected(shipVector, sailVector, windVector);
             debugObj.currentTurnRate = GameLogic.currentTurnRate(playerShip.currentSpeed) / Math.PI * 180 * 1000;
+            debugObj.serverTime = self.game.time.now + self.serverTimeDiff;
 			
 			self.guiVectors.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector);
             self.guiMinimap.render(self.game.camera.x, self.game.camera.y, self.ships, self.playerShipId);
