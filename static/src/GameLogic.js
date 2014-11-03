@@ -12,7 +12,8 @@ var GameLogic = {
     worldSize: 10000,
     guiMinimapRectangleSize: 100,
     guiCircleRadius: 50,
-    turnRateRadMs: 2 * Math.PI / 10 / 1000 // full 360 per 10 sec in radians/ms
+    turnRateRadMs: 2 * Math.PI / 5 / 1000, // full 360 per 5 sec in radians/ms
+    shipInertiaT: 8000
 };
 
 GameLogic.windRotation = function (positionPoint) {
@@ -209,6 +210,11 @@ GameLogic.returnBodyReceiveCallback = function (event, basicGameGame) {
 };
 
 GameLogic.currentTurnRate = function (currentSpeed) {
-    return Math.max(currentSpeed, 0) / GameLogic.windSpeed * GameLogic.turnRateRadMs;
+    return Math.abs(currentSpeed) / GameLogic.windSpeed * GameLogic.turnRateRadMs * (currentSpeed > 0 ? 1 : 0.5);
+};
+
+GameLogic.nextCurrentSpeed = function (currentSpeed, targetSpeed, elapsed) {
+    return currentSpeed/(1 + elapsed/GameLogic.shipInertiaT) +
+        targetSpeed/(1 + GameLogic.shipInertiaT/elapsed);
 };
 

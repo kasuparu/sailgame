@@ -60,7 +60,11 @@ Ship.prototype.update = function () {
     this.sail1.scale.x = 0.07 * this.sailState;
     this.sail2.scale.x = 0.09 * this.sailState;
 
-    this.currentSpeed = this.sailState * GameLogic.windSailPressureProjected(shipVector, sailVector, windVector);
+    this.currentSpeed = GameLogic.nextCurrentSpeed(
+        this.currentSpeed,
+        this.sailState * GameLogic.windSailPressureProjected(shipVector, sailVector, windVector),
+        this.game.time.elapsed
+    );
 
     if (this.currentSpeed !== 0) {
         this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
