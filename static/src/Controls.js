@@ -13,9 +13,11 @@ var Controls = function (object) {
 
     this.line = new Phaser.Line(0, 0, 0, 0);
     this.drawLine = false;
+    this.ts = Date.now();
+    this.isDown = false;
 };
 
-Controls.prototype.update = function (cursors, targetControls, eventQueue, activePointer, ship, game) {
+Controls.prototype.update = function (cursors, previousControls, eventQueue, activePointer, ship) {
     if ('undefined' !== typeof activePointer && 'undefined' !== typeof ship) {
         if (activePointer.isDown) {
             var activePointerPoint = new Phaser.Point(activePointer.worldX, activePointer.worldY);
@@ -39,27 +41,31 @@ Controls.prototype.update = function (cursors, targetControls, eventQueue, activ
         }
     }
 
-    if ('undefined' !== typeof targetControls) {
-        if (this.sailState !== targetControls.sailState || this.targetRotation !== targetControls.targetRotation) {
+    if ('undefined' !== typeof activePointer && 'undefined' !== typeof previousControls) {
+        if (this.isDown && !activePointer.isDown) {
+            this.ts = Date.now();
+
             var event = new GameEvent(
                 'controlsSend',
                 {
                     'targetRotation': this.targetRotation,
                     'sailState': this.sailState,
-                    'ts': Date.now()
+                    'ts': this.ts
                 }
             );
 
             eventQueue.push(event);
             //console.log('eventQueue push: ' + JSON.stringify(event));
-            // TODO set timer to average ping (roundtrip / 2) to apply controls
         }
     }
 
+    if ('undefined' !== typeof activePointer) {
+        this.isDown = activePointer.isDown;
+    }
 };
 
 Controls.prototype.render = function (game) {
    if (this.drawLine && 'undefined' !== typeof game) {
-       game.debug.geom(this.line, 'rgba(0,255,0,0.7)');
+       game.debug.geom(this.line, 'rgba(20,196,20,0.7)');
    }
 };
