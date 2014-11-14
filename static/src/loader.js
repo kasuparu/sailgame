@@ -10,9 +10,9 @@ require.config({
         'Phaser': {
             exports: 'Phaser'
         },
-        'BasicGame': {
-            exports: 'BasicGame'
-        },
+        //'BasicGame': {
+        //    exports: 'BasicGame'
+        //},
         'BasicGameBoot': {
             deps: [
                 'BasicGame'
