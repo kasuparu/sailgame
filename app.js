@@ -16,18 +16,10 @@ var winston = require('winston');
 var http = require('http');
 var path = require('path');
 var requireJs = require('requirejs');
-var requireJsConfig = require('./config/requirejs.json');
-
-requireJsConfig.baseUrl = path.join(__dirname, '/static/src');
-console.log(requireJsConfig.baseUrl);
-requireJsConfig.nodeRequire = require;
-
-for (var pathName in requireJsConfig.paths) {
-    if (requireJsConfig.paths.hasOwnProperty(pathName)) {
-        requireJsConfig.paths[pathName] = path.join(requireJsConfig.baseUrl, requireJsConfig.paths[pathName]);
-        console.log(requireJsConfig.paths[pathName]);
-    }
-}
+var requireJsConfig = {
+    baseUrl: path.join(__dirname, '/static/src'),
+    nodeRequire: require
+};
 
 requireJs.config(requireJsConfig);
 
@@ -140,12 +132,8 @@ io.sockets.on('connection', function (socket) {
 
 //requireJs([
 //    'socket.io',
-//    'Phaser',
-//    'BasicGame',
-//    'BasicGameBoot',
-//    'BasicGamePreloader',
-//    'BasicGameMainMenu',
-//    'BasicGameGame'
+//    'PhaserWrapper',
+//    'BasicGame'
 //], function (io, Phaser, BasicGame) {
 //
 //    console.log('requireJs callback');

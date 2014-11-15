@@ -4,104 +4,23 @@ require.config({
     // The shim config allows us to configure dependencies for
     // scripts that do not call define() to register a module
     shim: {
-        'socketio': {
+        'io': {
             exports: 'io'
         },
         'Phaser': {
             exports: 'Phaser'
-        },
-        //'BasicGame': {
-        //    exports: 'BasicGame'
-        //},
-        'BasicGameBoot': {
-            deps: [
-                'BasicGame'
-            ],
-            exports: 'BasicGame.Boot'
-        },
-        'BasicGamePreloader': {
-            deps: [
-                'BasicGame'
-            ],
-            exports: 'BasicGamePreloader'
-        },
-        'BasicGameMainMenu': {
-            deps: [
-                'BasicGame'
-            ],
-            exports: 'BasicGameMainMenu'
-        },
-        'BasicGameGame': {
-            deps: [
-                'socketio',
-                'Phaser',
-                'BasicGame',
-                'GameLogic',
-                'Ship',
-                'GuiVectors',
-                'GuiMinimap',
-                'GameEvent',
-                'Controls'
-            ],
-            exports: 'BasicGameGame'
-        },
-        'GameLogic': {
-            deps: [
-                'Phaser'
-            ],
-            exports: 'GameLogic'
-        },
-        'Ship': {
-            deps: [
-                'Phaser',
-                'GameLogic',
-                'Controls'
-            ],
-            exports: 'Ship'
-        },
-        'GuiVectors': {
-            deps: [
-                'Phaser'
-            ],
-            exports: 'GuiVectors'
-        },
-        'GuiMinimap': {
-            deps: [
-                'Phaser'
-            ],
-            exports: 'GuiMinimap'
-        },
-        'GameEvent': {
-            exports: 'GameEvent'
-        },
-        'Controls': {
-            deps: [
-                'GameEvent',
-                'GameLogic',
-                'Phaser'
-            ],
-            exports: 'Controls'
         }
     },
     paths: {
-        socketio: '/socket.io/socket.io',
-        Phaser: '../phaser/build/phaser.min',
-        BasicGame: 'BasicGame',
-        BasicGameBoot: 'Boot',
-        BasicGamePreloader: 'Preloader',
-        BasicGameMainMenu: 'MainMenu',
-        BasicGameGame: 'Game'
+        'io': '/socket.io/socket.io',
+        'Phaser': '../phaser/build/phaser.min'
     }
 });
 
 require([
-    'socketio',
+    'io',
     'Phaser',
-    'BasicGame',
-    'BasicGameBoot',
-    'BasicGamePreloader',
-    'BasicGameMainMenu',
-    'BasicGameGame'
+    'BasicGame'
 ], function (io, Phaser, BasicGame) {
 
     //	Create your Phaser game and inject it into the game div.
