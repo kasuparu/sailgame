@@ -1,7 +1,7 @@
 /*global global */
 /*global define */
 
-define(['jsdom', 'canvas'], function (jsdom, canvas) {
+define(['jsdom', 'canvas', 'path'], function (jsdom, canvas, path) {
     // https://gist.github.com/crisu83/5857c4a638e57308be4f#file-phaser-js
     // this is an ingenius hack that allows us to run Phaser without a browser
     // ... and yes, it took some time to figure out how to do this
@@ -22,8 +22,12 @@ define(['jsdom', 'canvas'], function (jsdom, canvas) {
     global.XMLHttpRequest = function() {};
 
     // load an expose PIXI in order to finally load Phaser
-    global.PIXI = require('../../phaser/build/custom/pixi');
-    global.Phaser = Phaser = require('../../phaser/build/custom/phaser-arcade-physics.min');
+    var phaserDir = path.resolve('phaser');
+    var pixiPath = path.join(phaserDir, 'build/custom/pixi');
+    var phaserPath = path.join(phaserDir, 'build/custom/phaser-arcade-physics.min');
+
+    global.PIXI = require(pixiPath);
+    global.Phaser = Phaser = require(phaserPath);
 
     return Phaser;
 });
