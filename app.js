@@ -18,7 +18,12 @@ var path = require('path');
 var requireJs = require('requirejs');
 var requireJsConfig = {
     baseUrl: path.join(__dirname, '/static/src'),
-    nodeRequire: require
+    nodeRequire: require,
+    map: {
+        '*': {
+            'Phaser': 'PhaserWrapper'
+        }
+    }
 };
 
 requireJs.config(requireJsConfig);
@@ -66,7 +71,7 @@ var io = require('socket.io').listen(server);
 
 requireJs([
     /*'socket.io',*/
-    'PhaserWrapper',
+    'Phaser',
     'BasicGameServer'
 ], function (/*io, */Phaser, BasicGameServer) {
 
