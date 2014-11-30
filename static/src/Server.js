@@ -48,11 +48,6 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
                             self.eventQueue.push(event);
                         });
 
-                        socket.on('bodySend', function (dataObj) {
-                            // TODO Apply body
-                            socket.broadcast.emit('bodyReceive', dataObj);
-                        });
-
                         socket.on('clientPong', function (startTime) {
                             var pingMs = (Date.now() - startTime) / 2;
                             //console.log('pingMs: ' + pingMs + 'ms');
@@ -81,6 +76,12 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
 
                     });
 
+                    self.game.world.setBounds(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize);
+
+                    self.game.time.advancedTiming = true;
+
+                    self.bodySendTime = self.game.time.now;
+
                 },
 
                 update: function () {
@@ -88,6 +89,17 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
                     var self = this;
 
                     var event;
+
+                    self.ships.forEach(function (ship) {
+                        ship.update();
+
+                        if (self.game.time.now > self.bodySendTime + 100) {
+                            self.bodySendTime = self.game.time.now;
+
+                            var event = new GameEvent('bodyReceive');
+                            self.eventQueue.push(event);
+                        }
+                    });
 
                     while ('undefined' !== typeof (event = self.eventQueue.pop())) {
                         //console.log('eventQueue pop: ' + JSON.stringify(event));
@@ -99,20 +111,24 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
                                 console.log('joinOk: ' + event.data.socket.id);
 
                                 var shipsInfo = self.ships.map(Ship.getInfo);
-                                console.log({ships: shipsInfo});
                                 event.data.socket.emit('joinOk', {ships: shipsInfo});
                                 event.data.socket.broadcast.emit('playerListChange', {ships: shipsInfo});
                                 break;
 
                             case 'controlsSend':
                                 //console.log('controlsSend: ' + JSON.stringify(dataObj));
-                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnControlsReceiveCallback(event));
+                                // TODO Apply for sentTs+100
+                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnControlsApplyCallback(event));
 
                                 var socket = event.data.socket;
                                 delete (event.data.socket); // TODO: Crutch
 
                                 socket.emit('controlsReceive', event.data);
                                 socket.broadcast.emit('controlsReceive', event.data);
+                                break;
+
+                            case 'bodyReceive':
+                                self.io.sockets.emit('bodyReceive', {ships: self.ships.map(Ship.getInfo)});
                                 break;
 
                             case 'disconnect':

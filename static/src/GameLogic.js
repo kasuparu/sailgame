@@ -160,23 +160,28 @@ define(['Phaser'], function (Phaser) {
 
         var found = false;
 
-        var shipFoundCallback = function (foundShip) {
-            found = true;
+        var shipFoundCallback = function (serverShipInfo) {
+            return function (foundSelfShip) {
+                found = true;
 
-            // If found, remove from shipsToDelete
-            GameLogic.forElementWithId(shipsToDelete, foundShip.id, removeElement);
+                // If found, remove from shipsToDelete
+                GameLogic.forElementWithId(shipsToDelete, foundSelfShip.id, removeElement);
+
+                // Apply ship info
+                foundSelfShip.setInfo(serverShipInfo);
+            };
         };
 
         for (var i = 0, len = serverShips.length; i < len; ++i) {
             found = false;
 
             // Find ship with this id in selfShips
-            GameLogic.forElementWithId(selfShips, serverShips[i].id, shipFoundCallback);
+            GameLogic.forElementWithId(selfShips, serverShips[i].id, shipFoundCallback(serverShips[i]));
 
             // If not found, add ship
             if (!found) {
-                // TODO apply body params
                 var ship = new ShipClass(serverShips[i].id, game, -GameLogic.worldSize/4, GameLogic.worldSize/4);
+                ship.setInfo(serverShips[i]);
 
                 selfShips.push(ship);
                 console.log('adding ship ' + ship.id);
@@ -194,22 +199,9 @@ define(['Phaser'], function (Phaser) {
         });
     };
 
-    GameLogic.returnControlsReceiveCallback = function (event) {
+    GameLogic.returnControlsApplyCallback = function (event) {
         return function (ship) {
-            ship.controls.targetRotation = event.data.targetRotation;
-            ship.controls.sailState = event.data.sailState;
-        };
-    };
-
-    GameLogic.returnBodyReceiveCallback = function (event, basicGameGame) {
-        return function (ship) {
-            // TODO Apply to playerShip too when server physics are available
-            if (ship.id !== basicGameGame.playerShipId) {
-                ship.shipBody.x = event.data.x;
-                ship.shipBody.x = event.data.x;
-                ship.shipBody.rotation = event.data.rotation;
-                ship.currentSpeed = event.data.currentSpeed;
-            }
+            ship.setControls(event.data.targetRotation, event.data.sailState);
         };
     };
 
@@ -239,6 +231,10 @@ define(['Phaser'], function (Phaser) {
             game.camera.follow(playerShip.shipBody);
             game.camera.focusOnXY(-GameLogic.worldSize/4, GameLogic.worldSize/4);
         };
+    };
+
+    GameLogic.sign = function (x) {
+        return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
     };
 
     return GameLogic;

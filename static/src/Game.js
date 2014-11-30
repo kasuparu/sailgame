@@ -131,7 +131,6 @@ define(
                 //timer.start();
                 self.game.time.advancedTiming = true;
 
-                self.bodySendTime = self.game.time.now;
             },
 
             update: function () {
@@ -145,24 +144,6 @@ define(
 
                 self.ships.forEach(function (ship) {
                     ship.update();
-                });
-
-                GameLogic.forElementWithId(self.ships, self.playerShipId, function (playerShip) {
-                    if (self.game.time.now > self.bodySendTime + 250) {
-                        self.bodySendTime = self.game.time.now;
-
-                        var event = new GameEvent(
-                            'bodySend',
-                            {
-                                'x': playerShip.shipBody.x,
-                                'y': playerShip.shipBody.y,
-                                'rotation': playerShip.shipBody.rotation,
-                                'currentSpeed': playerShip.currentSpeed
-                            }
-                        );
-
-                        self.eventQueue.push(event);
-                    }
                 });
 
                 var event;
@@ -188,16 +169,11 @@ define(
                             break;
 
                         case 'controlsReceive':
-                            GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnControlsReceiveCallback(event));
-                            break;
-
-                        case 'bodySend':
-                            event.data.id = self.playerShipId;
-                            self.socket.emit('bodySend', event.data);
+                            GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnControlsApplyCallback(event));
                             break;
 
                         case 'bodyReceive':
-                            GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnBodyReceiveCallback(event, self));
+                            GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
                             break;
 
                         case 'playerListChange':
