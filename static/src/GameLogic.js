@@ -102,6 +102,9 @@ define(['Phaser'], function (Phaser) {
             case 'side':
                 result = result - 90 * shipWindAngle / Math.abs(shipWindAngle);
                 break;
+
+            default:
+                break;
         }
 
         result = GameLogic.normalizeRotation(result);
@@ -217,6 +220,25 @@ define(['Phaser'], function (Phaser) {
     GameLogic.nextCurrentSpeed = function (currentSpeed, targetSpeed, elapsed) {
         return currentSpeed/(1 + elapsed/GameLogic.shipInertiaT) +
         targetSpeed/(1 + GameLogic.shipInertiaT/elapsed);
+    };
+
+    // Server only
+    GameLogic.returnDisconnectCallback = function (selfShips, event) {
+        return function (ship, index) {
+            console.log('disconnect: ' + ship.id);
+            selfShips.splice(index, 1);
+
+            event.data.socket.broadcast.emit('playerListChange', {ships: selfShips});
+        };
+    };
+
+    // Client only
+    GameLogic.returnSetCamera = function (game) {
+        return function (playerShip) {
+            console.log('player ship added: ' + playerShip.id);
+            game.camera.follow(playerShip.shipBody);
+            game.camera.focusOnXY(-GameLogic.worldSize/4, GameLogic.worldSize/4);
+        };
     };
 
     return GameLogic;

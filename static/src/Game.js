@@ -70,17 +70,8 @@ define(
                 });
 
                 self.socket.on('joinOk', function (data) {
-                    self.playerShipId = self.socket.socket.sessionid;
-                    console.log('joinOk: ' + self.playerShipId + ' players: ' + data.ships.length);
-
-                    GameLogic.syncShipsWithServer(self.ships, data.ships, self.game, Ship);
-                    console.log('players: ' + self.ships.length);
-
-                    GameLogic.forElementWithId(self.ships, self.playerShipId, function (playerShip) {
-                        console.log('player ship added: ' + playerShip.id);
-                        self.game.camera.follow(playerShip.shipBody);
-                        self.game.camera.focusOnXY(-GameLogic.worldSize/4, GameLogic.worldSize/4);
-                    });
+                    var event = new GameEvent('joinOk', data);
+                    self.eventQueue.push(event);
                 });
 
                 self.socket.on('controlsReceive', function (data) {
@@ -180,6 +171,17 @@ define(
                     //console.log('eventQueue pop: ' + JSON.stringify(event));
 
                     switch (event.type) {
+                        case 'joinOk':
+                            self.playerShipId = self.socket.socket.sessionid;
+                            console.log('joinOk: ' + self.playerShipId + ' players: ' + event.data.ships.length);
+
+                            GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
+                            console.log('players: ' + self.ships.length);
+
+                            GameLogic.forElementWithId(self.ships, self.playerShipId, GameLogic.returnSetCamera(self.game));
+
+                            break;
+
                         case 'controlsSend':
                             event.data.id = self.playerShipId;
                             self.socket.emit('controlsSend', event.data);

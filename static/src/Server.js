@@ -1,9 +1,9 @@
 /*global define */
 
-define(['PhaserWrapper'], function () {
+define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Ship, GameLogic, GameEvent) {
     return {
         getServiceClass: function (io) {
-            var BasicGameServer = function (game) {
+            var BasicGameServer = function (/* game */) {
                 this.io = io;
 
                 // Game logic variables
@@ -36,21 +36,16 @@ define(['PhaserWrapper'], function () {
                     self.io.sockets.on('connection', function (socket) {
 
                         socket.on('joinGame', function (data) {
-                            var ship = {};
-                            ship.id = socket.id;
-                            self.ships.push(ship);
-                            console.log('joinOk: ' + socket.id);
-
-                            socket.emit('joinOk', {ships: self.ships}); // TODO: tell about existing players
-
-                            socket.broadcast.emit('playerListChange', {ships: self.ships});
+                            data = data || {};
+                            data.socket = socket;
+                            var event = new GameEvent('joinGame', data);
+                            self.eventQueue.push(event);
                         });
 
                         socket.on('controlsSend', function (dataObj) {
-                            //console.log('controlsSend: ' + JSON.stringify(dataObj));
-                            // TODO Apply controls
-                            socket.emit('controlsReceive', dataObj);
-                            socket.broadcast.emit('controlsReceive', dataObj);
+                            dataObj.socket = socket;
+                            var event = new GameEvent('controlsSend', dataObj);
+                            self.eventQueue.push(event);
                         });
 
                         socket.on('bodySend', function (dataObj) {
@@ -80,19 +75,8 @@ define(['PhaserWrapper'], function () {
                         }, 2000);
 
                         socket.on('disconnect', function() {
-                            var len = self.ships.length;
-
-                            for (var i = 0; i < len; ++i) {
-                                var ship = self.ships[i];
-
-                                if (ship.id == socket.id) {
-                                    console.log('disconnect: ' + ship.id);
-                                    self.ships.splice(i, 1);
-                                    break;
-                                }
-                            }
-
-                            socket.broadcast.emit('playerListChange', {ships: self.ships});
+                            var event = new GameEvent('disconnect', {socket: socket});
+                            self.eventQueue.push(event);
                         });
 
                     });
@@ -101,6 +85,44 @@ define(['PhaserWrapper'], function () {
 
                 update: function () {
 
+                    var self = this;
+
+                    var event;
+
+                    while ('undefined' !== typeof (event = self.eventQueue.pop())) {
+                        //console.log('eventQueue pop: ' + JSON.stringify(event));
+
+                        switch (event.type) {
+                            case 'joinGame':
+                                var ship = new Ship(event.data.socket.id, self.game, -GameLogic.worldSize/4, GameLogic.worldSize/4);
+                                self.ships.push(ship);
+                                console.log('joinOk: ' + event.data.socket.id);
+
+                                var shipsInfo = self.ships.map(Ship.getInfo);
+                                console.log({ships: shipsInfo});
+                                event.data.socket.emit('joinOk', {ships: shipsInfo});
+                                event.data.socket.broadcast.emit('playerListChange', {ships: shipsInfo});
+                                break;
+
+                            case 'controlsSend':
+                                //console.log('controlsSend: ' + JSON.stringify(dataObj));
+                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnControlsReceiveCallback(event));
+
+                                var socket = event.data.socket;
+                                delete (event.data.socket); // TODO: Crutch
+
+                                socket.emit('controlsReceive', event.data);
+                                socket.broadcast.emit('controlsReceive', event.data);
+                                break;
+
+                            case 'disconnect':
+                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnDisconnectCallback(self.ships, event));
+                                break;
+
+                            default:
+                                break;
+                        }
+                    }
 
                 }
 

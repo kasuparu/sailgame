@@ -80,6 +80,10 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
         this.sail2.rotation = GameLogic.sailRotation(shipVector, windVector);
     };
 
+    Ship.getInfo = function (ship) {
+        return {id: ship.id};
+    };  // TODO: more info
+
     return Ship;
 });
 
