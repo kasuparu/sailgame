@@ -65,9 +65,8 @@ server.listen(app.get('port'), app.get('host'), function() {
     );
 });
 
-var nodeUniqueId = '{'+app.get('host')+':'+app.get('port')+'}';
-
 var io = require('socket.io').listen(server);
+io.set('log level', 1);
 
 requireJs([
     /*'socket.io',*/

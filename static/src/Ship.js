@@ -9,19 +9,29 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
 
         this.game = game;
 
-        this.shipBody = game.add.sprite(x, y, 'shipTemporary');
+        if (game.cache.checkImageKey('shipTemporary')) {
+            this.shipBody = game.add.sprite(x, y, 'shipTemporary');
+        } else {
+            this.shipBody = game.add.sprite(x, y, 'fakeImage');
+        }
+
         this.shipBody.anchor.setTo(0.5, 0.5);
         this.shipBody.scale.x = this.shipBody.scale.y = 0.1;
 
         this.sailState = 1;
 
+        if (game.cache.checkImageKey('sailTemporary')) {
+            this.sail1 = game.add.sprite(x, y, 'sailTemporary');
+            this.sail2 = game.add.sprite(x, y, 'sailTemporary');
+        } else {
+            this.sail1 = game.add.sprite(x, y, 'fakeImage');
+            this.sail2 = game.add.sprite(x, y, 'fakeImage');
+        }
 
-        this.sail1 = game.add.sprite(x, y, 'sailTemporary');
         this.sail1.anchor.setTo(0.5, 0.5);
         this.sail1.scale.x = 0.07 * this.sailState;
         this.sail1.scale.y = 0.07;
 
-        this.sail2 = game.add.sprite(x, y, 'sailTemporary');
         this.sail2.anchor.setTo(0.5, 0.5);
         this.sail2.scale.x = 0.09 * this.sailState;
         this.sail2.scale.y = 0.09;
@@ -30,6 +40,10 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
         this.shipBody.body.drag.set(0.5);
         this.shipBody.body.maxVelocity.setTo(200, 200);
         this.shipBody.body.collideWorldBounds = true;
+
+        if (!game.cache.checkImageKey('shipTemporary')) {
+            this.shipBody.body.setSize(0, 0, 43, 15);
+        }
 
         this.currentSpeed = 0;
 
@@ -65,8 +79,19 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
             this.game.time.elapsed
         );
 
-        if (this.currentSpeed !== 0) {
-            this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
+
+        console.log(this.shipBody.rotation + ' ' + parseInt(this.currentSpeed) + ' ' + parseInt(this.shipBody.body.velocity.x));
+        console.log(this.shipBody.position.x + ' ' + this.shipBody.body.x + ' ' + this.shipBody.body.position.x);
+
+        //this.checkWorldBounds();
+    };
+
+    Ship.prototype.checkWorldBoundsError = function () {
+        if (
+            Math.abs(this.shipBody.position.x) > GameLogic.worldSize/2 ||
+            Math.abs(this.shipBody.position.y) > GameLogic.worldSize/2
+        ) {
+            console.log('world bounds error');
         }
     };
 
@@ -93,10 +118,11 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
     Ship.getInfo = function (ship) {
         return {
             id: ship.id,
-            'x': ship.shipBody.x,
-            'y': ship.shipBody.y,
+            'x': ship.shipBody.body.x,
+            'y': ship.shipBody.body.y,
             'rotation': ship.shipBody.rotation,
             'currentSpeed': ship.currentSpeed,
+            'velocity': {'x': ship.shipBody.body.velocity.x, 'y': ship.shipBody.body.velocity.y},
             'targetRotation': ship.targetRotation,
             'sailState': ship.sailState,
             'ts': Date.now()
@@ -109,11 +135,16 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
     };
 
     Ship.prototype.setInfo = function (data) {
-        this.shipBody.x = data.x;
-        this.shipBody.y = data.y;
+        this.shipBody.body.x = data.x;
+        this.shipBody.body.y = data.y;
         this.shipBody.rotation = data.rotation;
         this.currentSpeed = data.currentSpeed;
+        this.shipBody.body.velocity = new Phaser.Point(data.velocity.x, data.velocity.y);
         this.setControls(data.targetRotation, data.sailState);
+
+        //console.log(this.shipBody.position);
+
+        this.checkWorldBoundsError();
     };
 
     return Ship;

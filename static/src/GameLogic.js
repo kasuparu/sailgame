@@ -154,7 +154,6 @@ define(['Phaser'], function (Phaser) {
         var shipsToDelete = selfShips.slice();
 
         var removeElement = function (shipToDelete, index) {
-            console.log('keeping ship ' + shipToDelete.id);
             shipsToDelete.splice(index, 1);
         };
 

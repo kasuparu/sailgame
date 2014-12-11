@@ -97,6 +97,8 @@ define(
 
                 self.game.world.setBounds(-GameLogic.worldSize/2, -GameLogic.worldSize/2, GameLogic.worldSize, GameLogic.worldSize);
 
+                self.game.physics.startSystem(Phaser.Physics.ARCADE);
+
                 var waterBitmap = self.game.add.bitmapData(GameLogic.waterBitmapSize, GameLogic.waterBitmapSize);
 
                 var waterGradient = waterBitmap.context.createLinearGradient(0, 0, GameLogic.waterBitmapSize - 1, GameLogic.waterBitmapSize - 1);
@@ -143,7 +145,8 @@ define(
                 });
 
                 self.ships.forEach(function (ship) {
-                    ship.update();
+                    //ship.update(); // Client physics
+                    ship.updateElements();
                 });
 
                 var event;
@@ -206,6 +209,7 @@ define(
                     debugObj.windSailPressureProjected = GameLogic.windSailPressureProjected(shipVector, sailVector, windVector);
                     debugObj.currentTurnRate = GameLogic.currentTurnRate(playerShip.currentSpeed) / Math.PI * 180 * 1000;
                     debugObj.serverTime = self.game.time.now + self.serverTimeDiff;
+                    debugObj.velocity = playerShip.shipBody.body.velocity;
                     debugObj.currentSpeed = Math.round(playerShip.currentSpeed / debugObj.windSailPressureProjected * 100 * 100)/100 + '%';
                     debugObj.currentSpeedDiff = Math.round((GameLogic.nextCurrentSpeed(
                         playerShip.currentSpeed,
