@@ -79,9 +79,10 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
             this.game.time.elapsed
         );
 
+        this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
 
         console.log(this.shipBody.rotation + ' ' + parseInt(this.currentSpeed) + ' ' + parseInt(this.shipBody.body.velocity.x));
-        console.log(this.shipBody.position.x + ' ' + this.shipBody.body.x + ' ' + this.shipBody.body.position.x);
+        console.log(this.shipBody.position.y + ' ' + this.shipBody.body.y + ' ' + this.shipBody.body.position.y);
 
         //this.checkWorldBounds();
     };
