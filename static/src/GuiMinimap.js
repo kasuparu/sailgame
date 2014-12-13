@@ -1,6 +1,13 @@
 /*global define */
 
 define(function () {
+    /**
+     * @param {Phaser.Game} game
+     * @param {number} guiAnchorX - pixels
+     * @param {number} guiAnchorY - pixels
+     * @param {number} guiMinimapRectangleSize - pixels
+     * @constructor
+     */
     var GuiMinimap = function (game, guiAnchorX, guiAnchorY, guiMinimapRectangleSize) {
         var self = this;
 
@@ -21,6 +28,12 @@ define(function () {
         };
     };
 
+    /**
+     * @param {number} cameraX - pixels
+     * @param {number} cameraY - pixels
+     * @param {Array} ships
+     * @param {string|number} playerShipId
+     */
     GuiMinimap.prototype.render = function (cameraX, cameraY, ships, playerShipId) {
         var self = this;
 

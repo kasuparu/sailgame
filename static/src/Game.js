@@ -145,8 +145,11 @@ define(
                 });
 
                 self.ships.forEach(function (ship) {
-                    //ship.update(); // Client physics
-                    ship.updateElements();
+                    if (GameLogic.disableClientPhysics) {
+                        ship.updateElements();
+                    } else {
+                        ship.update(); // Client physics
+                    }
                 });
 
                 var event;

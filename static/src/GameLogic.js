@@ -1,6 +1,27 @@
 /*global define */
 
 define(['Phaser'], function (Phaser) {
+    /**
+     * Singleton containing constants and functions
+     *
+     * @type {
+     *      {
+     *          windSpeed: number,
+     *          sailStep: number,
+     *          sailShift: number,
+     *          sailMaxTurnAngle: number,
+     *          epsilonDegrees: number,
+     *          waterColorLight: string,
+     *          waterColorDark: string,
+     *          waterBitmapSize: number,
+     *          worldSize: number,
+     *          guiMinimapRectangleSize: number,
+     *          guiCircleRadius: number,
+     *          turnRateRadMs: number,
+     *          shipInertiaT: number
+     *       }
+     * }
+     */
     var GameLogic = {
         windSpeed: 64,
         sailStep: 5,
@@ -14,28 +35,52 @@ define(['Phaser'], function (Phaser) {
         guiMinimapRectangleSize: 100,
         guiCircleRadius: 50,
         turnRateRadMs: 2 * Math.PI / 5 / 1000, // full 360 per 5 sec in radians/ms
-        shipInertiaT: 8000
+        shipInertiaT: 8000,
+        disableClientPhysics: false
     };
 
+    /**
+     * @param {Phaser.Point} positionPoint
+     * @returns {number}
+     */
     GameLogic.windRotation = function (positionPoint) {
         var windVector = GameLogic.rotate(new Phaser.Point(-positionPoint.x, -positionPoint.y), Math.PI / 2);
 
         return GameLogic.vectorToRotation(windVector);
     };
 
+    /**
+     * @param {Phaser.Point} positionPoint
+     * @returns {Phaser.Point}
+     */
     GameLogic.getWindVector = function (positionPoint) {
         return GameLogic.rotationToVector(GameLogic.windRotation(positionPoint))
             .multiply(GameLogic.windSpeed, GameLogic.windSpeed);
     };
 
+    /**
+     * @param {number} rotation - in radians
+     * @returns {Phaser.Point}
+     */
     GameLogic.rotationToVector = function (rotation) {
         return new Phaser.Point(Math.cos(rotation), Math.sin(rotation));
     };
 
+    /**
+     * @param {Phaser.Point} vector
+     * @param {boolean} [asDegrees]
+     * @returns {number}
+     */
     GameLogic.vectorToRotation = function (vector, asDegrees) {
         return new Phaser.Point(0, 0).angle(vector, asDegrees);
     };
 
+    /**
+     * Makes rotation to be -180 <= x <= 180
+     *
+     * @param {number} rotation - in degrees
+     * @returns {number} - degrees
+     */
     GameLogic.normalizeRotation = function (rotation) {
         var result = rotation;
 
@@ -46,6 +91,14 @@ define(['Phaser'], function (Phaser) {
         return result;
     };
 
+    /**
+     * Angle between vectors
+     *
+     * @param {Phaser.Point} a
+     * @param {Phaser.Point} b
+     * @param {boolean} [asDegrees=false]
+     * @returns {number}
+     */
     GameLogic.angle = function (a, b, asDegrees) {
         if (typeof asDegrees === 'undefined') {
             asDegrees = false;
@@ -54,7 +107,7 @@ define(['Phaser'], function (Phaser) {
         var result = 0;
 
         if (!a.isZero() && !b.isZero()) {
-            result = GameLogic.vectorToRotation(b, 'asDegrees') - GameLogic.vectorToRotation(a, 'asDegrees');
+            result = GameLogic.vectorToRotation(b, true) - GameLogic.vectorToRotation(a, true);
 
             result = GameLogic.normalizeRotation(result);
         }
@@ -66,6 +119,13 @@ define(['Phaser'], function (Phaser) {
         }
     };
 
+    /**
+     * Rotate vector by angle
+     *
+     * @param {Phaser.Point} point
+     * @param {number} angle - in radians
+     * @returns {Phaser.Point}
+     */
     GameLogic.rotate = function (point, angle) {
         return new Phaser.Point(
             point.x * Math.cos(angle) - point.y * Math.sin(angle),
@@ -73,6 +133,14 @@ define(['Phaser'], function (Phaser) {
         );
     };
 
+    /**
+     * Decides one of 4 ways sail can be turned to wind by angle between them
+     * Left and right are the "Side"
+     *
+     * @param {Phaser.Point} shipVector
+     * @param {Phaser.Point} windVector
+     * @returns {string}
+     */
     GameLogic.windSailCase = function (shipVector, windVector) {
         var shipWindAngle = GameLogic.angle(shipVector, windVector, 'asDegrees');
 
@@ -87,6 +155,12 @@ define(['Phaser'], function (Phaser) {
         return result;
     };
 
+    /**
+     * @param {Phaser.Point} shipVector
+     * @param {Phaser.Point} windVector
+     * @param {boolean} [asDegrees]
+     * @returns {number}
+     */
     GameLogic.sailRotation = function (shipVector, windVector, asDegrees) {
         var shipWindAngle = GameLogic.angle(shipVector, windVector, 'asDegrees');
 
@@ -124,6 +198,13 @@ define(['Phaser'], function (Phaser) {
         }
     };
 
+    /**
+     * Synthetic formula to get the result speed of wind pushing sails
+     *
+     * @param {Phaser.Point} sailVector
+     * @param {Phaser.Point} windVector
+     * @returns {number}
+     */
     GameLogic.windSailPressureNormalized = function (sailVector, windVector) {
         var sailWindAngle = GameLogic.angle(sailVector, windVector);
 
@@ -132,12 +213,25 @@ define(['Phaser'], function (Phaser) {
         return (Math.pow(cos * cos, 3) + 0.4 * Math.pow(1 - cos * cos, 2)) * windVector.getMagnitude();
     };
 
+    /**
+     * Projects wind speed on ship axis
+     *
+     * @param {Phaser.Point} shipVector
+     * @param {Phaser.Point} sailVector
+     * @param {Phaser.Point} windVector
+     * @returns {number}
+     */
     GameLogic.windSailPressureProjected = function (shipVector, sailVector, windVector) {
         var shipSailAngle = GameLogic.angle(shipVector, sailVector);
 
         return Math.cos(shipSailAngle) * GameLogic.windSailPressureNormalized(sailVector, windVector);
     };
 
+    /**
+     * @param {array} array
+     * @param {string|integer} id
+     * @param {function} callback
+     */
     GameLogic.forElementWithId = function (array, id, callback) {
         for (var i = 0, len = array.length; i < len; ++i) {
             var element = array[i];
@@ -150,6 +244,12 @@ define(['Phaser'], function (Phaser) {
         }
     };
 
+    /**
+     * @param {array} selfShips
+     * @param {array} serverShips
+     * @param {Phaser.Game} game
+     * @param {function} ShipClass
+     */
     GameLogic.syncShipsWithServer = function (selfShips, serverShips, game, ShipClass) {
         var shipsToDelete = selfShips.slice();
 
@@ -198,22 +298,42 @@ define(['Phaser'], function (Phaser) {
         });
     };
 
+    /**
+     * @param {Object} event
+     * @returns {function}
+     */
     GameLogic.returnControlsApplyCallback = function (event) {
         return function (ship) {
             ship.setControls(event.data.targetRotation, event.data.sailState);
         };
     };
 
+    /**
+     * @param {number} currentSpeed
+     * @returns {number}
+     */
     GameLogic.currentTurnRate = function (currentSpeed) {
         return Math.abs(currentSpeed) / GameLogic.windSpeed * GameLogic.turnRateRadMs * (currentSpeed > 0 ? 1 : 0.5);
     };
 
+    /**
+     * @param {number} currentSpeed
+     * @param {number} targetSpeed
+     * @param {number} elapsed
+     * @returns {number}
+     */
     GameLogic.nextCurrentSpeed = function (currentSpeed, targetSpeed, elapsed) {
         return currentSpeed/(1 + elapsed/GameLogic.shipInertiaT) +
         targetSpeed/(1 + GameLogic.shipInertiaT/elapsed);
     };
 
-    // Server only
+    /**
+     * Server only!
+     *
+     * @param selfShips
+     * @param {Object} event
+     * @returns {function}
+     */
     GameLogic.returnDisconnectCallback = function (selfShips, event) {
         return function (ship, index) {
             console.log('disconnect: ' + ship.id);
@@ -223,7 +343,12 @@ define(['Phaser'], function (Phaser) {
         };
     };
 
-    // Client only
+    /**
+     * Client only!
+     *
+     * @param {Phaser.Game} game
+     * @returns {function}
+     */
     GameLogic.returnSetCamera = function (game) {
         return function (playerShip) {
             console.log('player ship added: ' + playerShip.id);
@@ -232,6 +357,10 @@ define(['Phaser'], function (Phaser) {
         };
     };
 
+    /**
+     * @param {number} x
+     * @returns {number}
+     */
     GameLogic.sign = function (x) {
         return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
     };

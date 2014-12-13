@@ -1,6 +1,13 @@
 /*global define */
 
 define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Controls) {
+    /**
+     * @param {string|integer} id
+     * @param {Phaser.Game} game
+     * @param {number} x
+     * @param {number} y
+     * @constructor
+     */
     var Ship = function (id, game, x, y) {
         x = x || 0;
         y = y || 0;
@@ -80,11 +87,6 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
         );
 
         this.game.physics.arcade.velocityFromRotation(this.shipBody.rotation, this.currentSpeed, this.shipBody.body.velocity);
-
-        console.log(this.shipBody.rotation + ' ' + parseInt(this.currentSpeed) + ' ' + parseInt(this.shipBody.body.velocity.x));
-        console.log(this.shipBody.position.y + ' ' + this.shipBody.body.y + ' ' + this.shipBody.body.position.y);
-
-        //this.checkWorldBounds();
     };
 
     Ship.prototype.checkWorldBoundsError = function () {
@@ -116,6 +118,22 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
         this.sail2.rotation = GameLogic.sailRotation(shipVector, windVector);
     };
 
+    /**
+     * @param {Ship} ship
+     * @returns {
+     *      {
+     *          id: (string|number),
+     *          x: number,
+     *          y: number,
+     *          rotation: number,
+     *          currentSpeed: number,
+     *          velocity: {x: number, y: number},
+     *          targetRotation: number,
+     *          sailState: number,
+     *          ts: number
+     *      }
+     * }
+     */
     Ship.getInfo = function (ship) {
         return {
             id: ship.id,
@@ -130,11 +148,19 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
         };
     };
 
+    /**
+     *
+     * @param {number} targetRotation
+     * @param {number} sailState
+     */
     Ship.prototype.setControls = function (targetRotation, sailState) {
         this.controls.targetRotation = targetRotation;
         this.controls.sailState = sailState;
     };
 
+    /**
+     * @param {Object} data
+     */
     Ship.prototype.setInfo = function (data) {
         this.shipBody.body.x = data.x;
         this.shipBody.body.y = data.y;

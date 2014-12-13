@@ -1,6 +1,13 @@
 /*global define */
 
 define(['Phaser'], function (Phaser) {
+    /**
+     * @param {Phaser.Game} game
+     * @param {number} guiAnchorX - pixels
+     * @param {number} guiAnchorY - pixels
+     * @param {number} guiCircleRadius - pixels
+     * @constructor
+     */
     var GuiVectors = function (game, guiAnchorX, guiAnchorY, guiCircleRadius) {
         this.game = game;
 
@@ -19,6 +26,13 @@ define(['Phaser'], function (Phaser) {
         this.sailVectorScale = guiCircleRadius * 0.8;
     };
 
+    /**
+     * @param {number} cameraX - pixels
+     * @param {number} cameraY - pixels
+     * @param {Phaser.Point} shipVector
+     * @param {Phaser.Point} windVector
+     * @param {Phaser.Point} sailVector
+     */
     GuiVectors.prototype.render = function (cameraX, cameraY, shipVector, windVector, sailVector) {
         this.guiCircleLeft.setTo(
             this.guiAnchorX + cameraX,

@@ -1,6 +1,10 @@
 /*global define */
 
 define(['Phaser', 'GameLogic', 'GameEvent'], function (Phaser, GameLogic, GameEvent) {
+    /**
+     * @param {Controls} object
+     * @constructor
+     */
     var Controls = function (object) {
         if ('undefined' !== typeof object) {
             this.sailState = object.sailState;
@@ -16,6 +20,14 @@ define(['Phaser', 'GameLogic', 'GameEvent'], function (Phaser, GameLogic, GameEv
         this.isDown = false;
     };
 
+    /**
+     *
+     * @param {object} cursors
+     * @param {Controls} previousControls
+     * @param {Array} eventQueue
+     * @param {Phaser.Pointer} activePointer
+     * @param ship
+     */
     Controls.prototype.update = function (cursors, previousControls, eventQueue, activePointer, ship) {
         if ('undefined' !== typeof activePointer && 'undefined' !== typeof ship) {
             if (activePointer.isDown) {
@@ -63,6 +75,9 @@ define(['Phaser', 'GameLogic', 'GameEvent'], function (Phaser, GameLogic, GameEv
         }
     };
 
+    /**
+     * @param {Phaser.Game} game
+     */
     Controls.prototype.render = function (game) {
         if (this.drawLine && 'undefined' !== typeof game) {
             game.debug.geom(this.line, 'rgba(20,196,20,0.7)');
