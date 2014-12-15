@@ -58,6 +58,7 @@ define(
                 self.socket = self.io.connect();
                 self.averagePingMs = 10;
                 self.serverTimeDiff = 0;
+                self.lastInfoDiff = {};
 
                 self.socket.on('connect', function () {
                     self.socket.emit('joinGame');
@@ -179,7 +180,10 @@ define(
                             break;
 
                         case 'bodyReceive':
+                            GameLogic.forElementWithId(event.data.ships, self.playerShipId, GameLogic.returnInfoDiffCallback(event, self));
+
                             GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
+
                             break;
 
                         case 'playerListChange':
@@ -219,6 +223,7 @@ define(
                         playerShip.sailState * GameLogic.windSailPressureProjected(shipVector, sailVector, windVector),
                         self.game.time.elapsed
                     ) - playerShip.currentSpeed) / self.game.time.elapsed * 1000 * 100)/100;
+                    debugObj.info = JSON.stringify(self.lastInfoDiff);
 
                     self.guiVectors.render(self.game.camera.x, self.game.camera.y, shipVector, windVector, sailVector);
                     self.guiMinimap.render(self.game.camera.x, self.game.camera.y, self.ships, self.playerShipId);

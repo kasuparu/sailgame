@@ -228,7 +228,7 @@ define(['Phaser'], function (Phaser) {
     };
 
     /**
-     * @param {array} array
+     * @param {Array} array
      * @param {string|integer} id
      * @param {function} callback
      */
@@ -245,8 +245,8 @@ define(['Phaser'], function (Phaser) {
     };
 
     /**
-     * @param {array} selfShips
-     * @param {array} serverShips
+     * @param {Array} selfShips
+     * @param {Array} serverShips
      * @param {Phaser.Game} game
      * @param {function} ShipClass
      */
@@ -363,6 +363,41 @@ define(['Phaser'], function (Phaser) {
      */
     GameLogic.sign = function (x) {
         return typeof x === 'number' ? x ? x < 0 ? -1 : 1 : x === x ? 0 : NaN : NaN;
+    };
+
+    /**
+     * @param {Object} basicGame
+     * @param {Object} event
+     * @returns {function}
+     */
+    GameLogic.returnInfoDiffCallback = function (event, basicGame) {
+        /**
+         * @param {Object} eventShip
+         */
+        return function (eventShip) {
+            GameLogic.forElementWithId(basicGame.ships, basicGame.playerShipId, function (playerShip) {
+                basicGame.lastInfoDiff = {
+                    ts: Date.now() - eventShip.ts,
+                    distance: Math.round(Math.pow(
+                        Math.pow(eventShip.x - playerShip.shipBody.body.x, 2) +
+                        Math.pow(eventShip.y - playerShip.shipBody.body.y, 2),
+                        0.5
+                    ) * 100) / 100,
+                    rotation: Math.round(
+                        GameLogic.normalizeRotation(eventShip.rotation - playerShip.shipBody.rotation) * 1000
+                    ) / 1000,
+                    currentSpeed: Math.round(
+                        (eventShip.currentSpeed - playerShip.currentSpeed) * 1000
+                    ) / 1000,
+                    velocity: {
+                        x: Math.round((eventShip.velocity.x - playerShip.shipBody.body.velocity.x) * 100) / 100,
+                        y: Math.round((eventShip.velocity.y - playerShip.shipBody.body.velocity.y) * 100) / 100
+                    }
+                };
+            });
+
+
+        };
     };
 
     return GameLogic;
