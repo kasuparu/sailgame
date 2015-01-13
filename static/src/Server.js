@@ -1,6 +1,6 @@
 /*global define */
 
-define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Ship, GameLogic, GameEvent) {
+define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], function (Phaser, Ship, GameLogic, GameEvent, TimedQueue) {
     return {
         getServiceClass: function (io) {
             var BasicGameServer = function (/* game */) {
@@ -42,6 +42,8 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
                     self.timer = null;
 
                     self.eventQueue = [];
+
+                    self.timedQueue = new TimedQueue();
 
                     self.ships = [];
 
@@ -112,7 +114,7 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
                             self.bodySendTime = self.game.time.now;
 
                             var event = new GameEvent('bodyReceive');
-                            self.eventQueue.push(event);
+                            self.timedQueue.push(Date.now(), event);
                         }
                     });
 
@@ -142,10 +144,6 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
                                 socket.broadcast.emit('controlsReceive', event.data);
                                 break;
 
-                            case 'bodyReceive':
-                                self.io.sockets.emit('bodyReceive', {ships: self.ships.map(Ship.getInfo)});
-                                break;
-
                             case 'disconnect':
                                 GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnDisconnectCallback(self.ships, event));
                                 break;
@@ -155,6 +153,22 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent'], function (Phaser, Sh
                         }
                     }
 
+                    var events = self.timedQueue.get(Date.now());
+
+                    events.forEach(function (event) {
+                        switch (event.type) {
+                            case 'bodyReceive':
+                                self.io.sockets.emit(
+                                    'bodyReceive',
+                                    {ships: self.ships.map(Ship.getInfo), ts: Date.now() + GameLogic.clientPhysicsDelayMs}
+                                );
+                                console.log(Date.now() + GameLogic.clientPhysicsDelayMs);
+                                break;
+
+                            default:
+                                break;
+                        }
+                    });
                 }
 
             };

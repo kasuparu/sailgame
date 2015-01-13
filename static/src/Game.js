@@ -1,8 +1,8 @@
 /*global define */
 
 define(
-    ['Phaser', 'io', 'GameLogic', 'Ship', 'GuiVectors', 'GuiMinimap', 'GameEvent', 'Controls'],
-    function (Phaser, io, GameLogic, Ship, GuiVectors, GuiMinimap, GameEvent, Controls) {
+    ['Phaser', 'io', 'GameLogic', 'Ship', 'GuiVectors', 'GuiMinimap', 'GameEvent', 'Controls', 'TimedQueue'],
+    function (Phaser, io, GameLogic, Ship, GuiVectors, GuiMinimap, GameEvent, Controls, TimedQueue) {
         var BasicGameGame = function (game) {
 
             //	When a State is added to Phaser it automatically has the following properties set on it, even if they already exist:
@@ -52,6 +52,8 @@ define(
 
                 self.eventQueue = [];
 
+                self.timedQueue = new TimedQueue();
+
                 self.ships = [];
 
                 self.io = io;
@@ -82,7 +84,7 @@ define(
 
                 self.socket.on('bodyReceive', function (data) {
                     var event = new GameEvent('bodyReceive', data);
-                    self.eventQueue.push(event);
+                    self.timedQueue.push(data.ts, event);
                 });
 
                 self.socket.on('playerListChange', function (data) {
@@ -179,13 +181,6 @@ define(
                             GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnControlsApplyCallback(event));
                             break;
 
-                        case 'bodyReceive':
-                            GameLogic.forElementWithId(event.data.ships, self.playerShipId, GameLogic.returnInfoDiffCallback(event, self));
-
-                            GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
-
-                            break;
-
                         case 'playerListChange':
                             console.log('playerListChange: ' + event.data + ' players: ' + event.data.ships.length);
                             GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
@@ -195,6 +190,22 @@ define(
                             break;
                     }
                 }
+
+                var events = self.timedQueue.get(Date.now());
+
+                events.forEach(function (event) {
+                    switch (event.type) {
+                        case 'bodyReceive':
+                            GameLogic.forElementWithId(event.data.ships, self.playerShipId, GameLogic.returnInfoDiffCallback(event, self));
+
+                            GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
+
+                            break;
+
+                        default:
+                            break;
+                    }
+                });
             },
 
             render: function () {

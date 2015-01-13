@@ -36,7 +36,8 @@ define(['Phaser'], function (Phaser) {
         guiCircleRadius: 50,
         turnRateRadMs: 2 * Math.PI / 5 / 1000, // full 360 per 5 sec in radians/ms
         shipInertiaT: 8000,
-        disableClientPhysics: false
+        disableClientPhysics: false,
+        clientPhysicsDelayMs: 100
     };
 
     /**
