@@ -339,7 +339,37 @@ define(['Phaser'], function (Phaser) {
             console.log('disconnect: ' + ship.id);
             selfShips.splice(index, 1);
 
-            event.data.socket.broadcast.emit('playerListChange', {ships: selfShips});
+            event.data.socket.broadcast.emit('playerListChange', {ships: selfShips.map(GameLogic.getShipInfo)});
+        };
+    };
+
+    /**
+     * @param {object} ship
+     * @returns {
+     *      {
+     *          id: (string|number),
+     *          x: number,
+     *          y: number,
+     *          rotation: number,
+     *          currentSpeed: number,
+     *          velocity: {x: number, y: number},
+     *          targetRotation: number,
+     *          sailState: number,
+     *          ts: number
+     *      }
+     * }
+     */
+    GameLogic.getShipInfo = function (ship) {
+        return {
+            id: ship.id,
+            'x': ship.shipBody.body.x,
+            'y': ship.shipBody.body.y,
+            'rotation': ship.shipBody.rotation,
+            'currentSpeed': ship.currentSpeed,
+            'velocity': {'x': ship.shipBody.body.velocity.x, 'y': ship.shipBody.body.velocity.y},
+            'targetRotation': ship.targetRotation,
+            'sailState': ship.sailState,
+            'ts': Date.now()
         };
     };
 

@@ -135,17 +135,7 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
      * }
      */
     Ship.getInfo = function (ship) {
-        return {
-            id: ship.id,
-            'x': ship.shipBody.body.x,
-            'y': ship.shipBody.body.y,
-            'rotation': ship.shipBody.rotation,
-            'currentSpeed': ship.currentSpeed,
-            'velocity': {'x': ship.shipBody.body.velocity.x, 'y': ship.shipBody.body.velocity.y},
-            'targetRotation': ship.targetRotation,
-            'sailState': ship.sailState,
-            'ts': Date.now()
-        };
+        return GameLogic.getShipInfo(ship);
     };
 
     /**
