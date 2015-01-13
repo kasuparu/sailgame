@@ -162,7 +162,6 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                                     'bodyReceive',
                                     {ships: self.ships.map(Ship.getInfo), ts: Date.now() + GameLogic.clientPhysicsDelayMs}
                                 );
-                                console.log(Date.now() + GameLogic.clientPhysicsDelayMs);
                                 break;
 
                             default:
