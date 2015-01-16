@@ -191,7 +191,7 @@ define(
                     }
                 }
 
-                var events = self.timedQueue.get(Date.now());
+                var events = self.timedQueue.get(self.game.time.now + self.serverTimeDiff);
 
                 events.forEach(function (event) {
                     switch (event.type) {
