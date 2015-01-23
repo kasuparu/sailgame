@@ -310,6 +310,23 @@ define(['Phaser'], function (Phaser) {
     };
 
     /**
+     * @param {Object} event
+     * @param {number} timestamp
+     * @returns {function}
+     */
+    GameLogic.returnCreateControlsEventCallback = function (event, timestamp) {
+        return function () {
+            event.data.socket.get('averagePingMs', function (err, averagePingMs) {
+                var sentTs = timestamp - averagePingMs;
+                //console.log('Client controlsSend est @ ' + GameLogic.timestampShortened(sentTs));
+                var serverApplyTs = sentTs + GameLogic.clientPhysicsDelayMs;
+                //console.log('Client controlsReceive est @ ' + GameLogic.timestampShortened(serverApplyTs + GameLogic.clientPhysicsDelayMs));
+                event.data.ts = serverApplyTs;
+            });
+        };
+    };
+
+    /**
      * @param {number} currentSpeed
      * @returns {number}
      */
@@ -429,6 +446,25 @@ define(['Phaser'], function (Phaser) {
 
 
         };
+    };
+
+    /**
+     *
+     * @param {number} timestamp
+     * @returns {number}
+     */
+    GameLogic.timestampShortened = function (timestamp) {
+        var now = new Date();
+        var midnightTs = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            now.getHours(),
+            now.getMinutes(),
+            0
+        );
+
+        return timestamp - midnightTs;
     };
 
     return GameLogic;
