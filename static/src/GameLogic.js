@@ -314,13 +314,13 @@ define(['Phaser'], function (Phaser) {
      * @param {number} timestamp
      * @returns {function}
      */
-    GameLogic.returnCreateControlsEventCallback = function (event, timestamp) {
+    GameLogic.returnCreateClientInitiatedEventCallback = function (event, timestamp) {
         return function () {
             event.data.socket.get('averagePingMs', function (err, averagePingMs) {
                 var sentTs = timestamp - averagePingMs;
-                //console.log('Client controlsSend est @ ' + GameLogic.timestampShortened(sentTs));
+                console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(sentTs));
                 var serverApplyTs = sentTs + GameLogic.clientPhysicsDelayMs;
-                //console.log('Client controlsReceive est @ ' + GameLogic.timestampShortened(serverApplyTs + GameLogic.clientPhysicsDelayMs));
+                console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(serverApplyTs + GameLogic.clientPhysicsDelayMs));
                 event.data.ts = serverApplyTs;
             });
         };
@@ -425,7 +425,7 @@ define(['Phaser'], function (Phaser) {
         return function (eventShip) {
             GameLogic.forElementWithId(basicGame.ships, basicGame.playerShipId, function (playerShip) {
                 basicGame.lastInfoDiff = {
-                    ts: Date.now() - eventShip.ts,
+                    ts: basicGame.game.time.time - eventShip.ts,
                     distance: Math.round(Math.pow(
                         Math.pow(eventShip.x - playerShip.shipBody.body.x, 2) +
                         Math.pow(eventShip.y - playerShip.shipBody.body.y, 2),
