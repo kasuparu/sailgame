@@ -79,7 +79,7 @@ define(
 
                 self.socket.on('controlsReceive', function (data) {
                     var event = new GameEvent('controlsReceive', data);
-                    self.eventQueue.push(event);
+                    self.timedQueue.push(data.ts, event);
                 });
 
                 self.socket.on('bodyReceive', function (data) {
@@ -173,12 +173,9 @@ define(
                             break;
 
                         case 'controlsSend':
+                            //console.log('Client controlsSend @ ' + GameLogic.timestampShortened(self.game.time.now + self.serverTimeDiff));
                             event.data.id = self.playerShipId;
                             self.socket.emit('controlsSend', event.data);
-                            break;
-
-                        case 'controlsReceive':
-                            GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnControlsApplyCallback(event));
                             break;
 
                         case 'playerListChange':
@@ -191,7 +188,7 @@ define(
                     }
                 }
 
-                var events = self.timedQueue.get(Date.now());
+                var events = self.timedQueue.get(self.game.time.now + self.serverTimeDiff);
 
                 events.forEach(function (event) {
                     switch (event.type) {
@@ -200,6 +197,11 @@ define(
 
                             GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
 
+                            break;
+
+                        case 'controlsReceive':
+                            //console.log('Client controlsReceive @ ' + GameLogic.timestampShortened(self.game.time.now + self.serverTimeDiff));
+                            GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnControlsApplyCallback(event));
                             break;
 
                         default:

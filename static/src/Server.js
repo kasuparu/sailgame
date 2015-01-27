@@ -63,7 +63,7 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                         });
 
                         socket.on('clientPong', function (startTime) {
-                            var pingMs = (Date.now() - startTime) / 2;
+                            var pingMs = (self.game.time.now - startTime) / 2;
                             //console.log('pingMs: ' + pingMs + 'ms');
 
                             socket.get('averagePingMs', function (err, averagePingMs) {
@@ -79,7 +79,7 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
 
                         self.timer = setInterval(function() {
                             socket.get('averagePingMs', function (err, averagePingMs) {
-                                socket.emit('clientPing', {startTime: Date.now(), averagePingMs: averagePingMs});
+                                socket.emit('clientPing', {startTime: self.game.time.now, averagePingMs: averagePingMs});
                             });
                         }, 2000);
 
@@ -114,7 +114,7 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                             self.bodySendTime = self.game.time.now;
 
                             var event = new GameEvent('bodyReceive');
-                            self.timedQueue.push(Date.now(), event);
+                            self.timedQueue.push(self.game.time.now, event);
                         }
                     });
 
@@ -133,15 +133,13 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                                 break;
 
                             case 'controlsSend':
-                                //console.log('controlsSend: ' + JSON.stringify(dataObj));
-                                // TODO Apply for sentTs+100
-                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnControlsApplyCallback(event));
+                                GameLogic.forElementWithId(
+                                    self.ships,
+                                    event.data.socket.id,
+                                    GameLogic.returnCreateControlsEventCallback(event, self.game.time.now)
+                                );
 
-                                var socket = event.data.socket;
-                                delete (event.data.socket); // TODO: Crutch
-
-                                socket.emit('controlsReceive', event.data);
-                                socket.broadcast.emit('controlsReceive', event.data);
+                                self.timedQueue.push(event.data.ts, event);
                                 break;
 
                             case 'disconnect':
@@ -153,15 +151,29 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                         }
                     }
 
-                    var events = self.timedQueue.get(Date.now());
+                    var events = self.timedQueue.get(self.game.time.now);
 
                     events.forEach(function (event) {
                         switch (event.type) {
                             case 'bodyReceive':
                                 self.io.sockets.emit(
                                     'bodyReceive',
-                                    {ships: self.ships.map(Ship.getInfo), ts: Date.now() + GameLogic.clientPhysicsDelayMs}
+                                    {ships: self.ships.map(Ship.getInfo), ts: self.game.time.now + GameLogic.clientPhysicsDelayMs}
                                 );
+
+                                break;
+
+                            case 'controlsSend':
+                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnControlsApplyCallback(event));
+
+                                delete (event.data.socket);
+                                event.data.ts += GameLogic.clientPhysicsDelayMs;
+
+                                self.io.sockets.emit(
+                                    'controlsReceive',
+                                    event.data
+                                );
+
                                 break;
 
                             default:
