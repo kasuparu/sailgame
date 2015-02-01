@@ -164,6 +164,12 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
         this.checkWorldBoundsError();
     };
 
+    Ship.prototype.destroy = function () {
+        this.shipBody.destroy();
+        this.sail1.destroy();
+        this.sail2.destroy();
+    };
+
     return Ship;
 });
 

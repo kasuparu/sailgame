@@ -293,7 +293,8 @@ define(['Phaser'], function (Phaser) {
         // Delete all shipsToDelete left
         shipsToDelete.forEach(function (shipToDelete) {
             GameLogic.forElementWithId(selfShips, shipToDelete.id, function (ship, index) {
-                //console.log('removing ship ' + ship.id);
+                console.log('removing ship ' + ship.id);
+                ship.destroy();
                 selfShips.splice(index, 1);
             });
         });
