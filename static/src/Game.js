@@ -56,6 +56,8 @@ define(
 
                 self.ships = [];
 
+                self.objects = [];
+
                 self.io = io;
                 self.socket = self.io.connect();
                 self.averagePingMs = 10;

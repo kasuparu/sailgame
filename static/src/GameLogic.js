@@ -388,6 +388,7 @@ define(['Phaser'], function (Phaser) {
             'velocity': {'x': ship.shipBody.body.velocity.x, 'y': ship.shipBody.body.velocity.y},
             'targetRotation': ship.controls.targetRotation,
             'sailState': ship.controls.sailState,
+            'targetShip': ship.controls.targetShip,
             'ts': Date.now()
         };
     };

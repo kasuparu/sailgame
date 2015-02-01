@@ -142,10 +142,12 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
      *
      * @param {number} targetRotation
      * @param {number} sailState
+     * @param {string|null} targetShip
      */
-    Ship.prototype.setControls = function (targetRotation, sailState) {
+    Ship.prototype.setControls = function (targetRotation, sailState, targetShip) {
         this.controls.targetRotation = targetRotation;
         this.controls.sailState = sailState;
+        this.controls.targetShip = targetShip;
     };
 
     /**
@@ -157,7 +159,7 @@ define(['Phaser', 'GameLogic', 'Controls'], function (Phaser, GameLogic, Control
         this.shipBody.rotation = data.rotation;
         this.currentSpeed = data.currentSpeed;
         this.shipBody.body.velocity = new Phaser.Point(data.velocity.x, data.velocity.y);
-        this.setControls(data.targetRotation, data.sailState);
+        this.setControls(data.targetRotation, data.sailState, data.targetShip);
 
         //console.log(this.shipBody.position);
 

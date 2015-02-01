@@ -9,9 +9,11 @@ define(['Phaser', 'GameLogic', 'GameEvent'], function (Phaser, GameLogic, GameEv
         if ('undefined' !== typeof object) {
             this.sailState = object.sailState;
             this.targetRotation = object.targetRotation;
+            this.targetShip = object.targetShip || null;
         } else {
             this.sailState = 1;
             this.targetRotation = 0;
+            this.targetShip = null;
         }
 
         this.line = new Phaser.Line(0, 0, 0, 0);
@@ -31,6 +33,8 @@ define(['Phaser', 'GameLogic', 'GameEvent'], function (Phaser, GameLogic, GameEv
     Controls.prototype.update = function (cursors, previousControls, eventQueue, activePointer, ship) {
         if ('undefined' !== typeof activePointer && 'undefined' !== typeof ship) {
             if (activePointer.isDown) {
+                // TODO Detect if activePointer clicked over other ship
+
                 var activePointerPoint = new Phaser.Point(activePointer.worldX, activePointer.worldY);
 
                 this.sailState = ship.shipBody.position.distance(activePointerPoint) / 200;
@@ -47,6 +51,8 @@ define(['Phaser', 'GameLogic', 'GameEvent'], function (Phaser, GameLogic, GameEv
                 );
 
                 this.drawLine = true;
+
+                // TODO else: this.targetShip = ship.id;
             } else {
                 this.drawLine = false;
             }

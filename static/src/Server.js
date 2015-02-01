@@ -47,6 +47,8 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
 
                     self.ships = [];
 
+                    self.objects = [];
+
                     self.io.sockets.on('connection', function (socket) {
 
                         socket.on('joinGame', function (data) {
