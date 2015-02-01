@@ -73,7 +73,7 @@ define(
                 });
 
                 self.socket.on('joinOk', function (data) {
-                    console.log('Client got joinOk @ ' + GameLogic.timestampShortened(self.game.time.time));
+                    //console.log('Client got joinOk @ ' + GameLogic.timestampShortened(self.game.time.time));
                     var event = new GameEvent('joinOk', data);
                     self.timedQueue.push(data.ts, event);
                 });
@@ -163,7 +163,7 @@ define(
 
                     switch (event.type) {
                         case 'controlsSend':
-                            console.log('Client controlsSend @ ' + GameLogic.timestampShortened(self.game.time.time));
+                            //console.log('Client controlsSend @ ' + GameLogic.timestampShortened(self.game.time.time));
                             event.data.id = self.playerShipId;
                             self.socket.emit('controlsSend', event.data);
                             break;
@@ -178,7 +178,7 @@ define(
                 events.forEach(function (event) {
                     switch (event.type) {
                         case 'bodyReceive':
-                            console.log('Client bodyReceive @ ' + GameLogic.timestampShortened(self.game.time.time));
+                            //console.log('Client bodyReceive @ ' + GameLogic.timestampShortened(self.game.time.time));
                             GameLogic.forElementWithId(event.data.ships, self.playerShipId, GameLogic.returnInfoDiffCallback(event, self));
 
                             GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
@@ -186,25 +186,25 @@ define(
                             break;
 
                         case 'controlsReceive':
-                            console.log('Client controlsReceive @ ' + GameLogic.timestampShortened(self.game.time.time));
+                            //console.log('Client controlsReceive @ ' + GameLogic.timestampShortened(self.game.time.time));
                             GameLogic.forElementWithId(self.ships, event.data.id, GameLogic.returnControlsApplyCallback(event));
                             break;
 
                         case 'joinOk':
-                            console.log('Client joinOk @ ' + GameLogic.timestampShortened(self.game.time.time));
+                            //console.log('Client joinOk @ ' + GameLogic.timestampShortened(self.game.time.time));
                             self.playerShipId = self.socket.socket.sessionid;
-                            console.log('joinOk: ' + self.playerShipId + ' players: ' + event.data.ships.length);
+                            //console.log('joinOk: ' + self.playerShipId + ' players: ' + event.data.ships.length);
 
                             GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
-                            console.log('players: ' + self.ships.length);
+                            //console.log('players: ' + self.ships.length);
 
                             GameLogic.forElementWithId(self.ships, self.playerShipId, GameLogic.returnSetCamera(self.game));
 
                             break;
 
                         case 'playerListChange':
-                            console.log('Client playerListChange @ ' + GameLogic.timestampShortened(self.game.time.time));
-                            console.log('playerListChange: ' + event.data + ' players: ' + event.data.ships.length);
+                            //console.log('Client playerListChange @ ' + GameLogic.timestampShortened(self.game.time.time));
+                            //console.log('playerListChange: ' + event.data + ' players: ' + event.data.ships.length);
                             GameLogic.syncShipsWithServer(self.ships, event.data.ships, self.game, Ship);
                             break;
 

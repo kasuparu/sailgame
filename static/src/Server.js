@@ -120,10 +120,11 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
 
                     while ('undefined' !== typeof (event = self.eventQueue.pop())) {
                         //console.log('eventQueue pop: ' + JSON.stringify(event));
+                        var callback;
 
                         switch (event.type) {
                             case 'joinGame':
-                                var callback = GameLogic.returnCreateClientInitiatedEventCallback(event, self.game.time.time);
+                                callback = GameLogic.returnCreateClientInitiatedEventCallback(event, self.game.time.time);
                                 callback();
 
                                 self.timedQueue.push(event.data.ts, event);
@@ -141,7 +142,10 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                                 break;
 
                             case 'disconnect':
-                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnDisconnectCallback(self.ships, event));
+                                callback = GameLogic.returnCreateClientInitiatedEventCallback(event, self.game.time.time);
+                                callback();
+
+                                self.timedQueue.push(event.data.ts, event);
                                 break;
 
                             default:
@@ -154,7 +158,7 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                     events.forEach(function (event) {
                         switch (event.type) {
                             case 'bodyReceive':
-                                console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(self.game.time.time + GameLogic.clientPhysicsDelayMs));
+                                //console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(self.game.time.time + GameLogic.clientPhysicsDelayMs));
 
                                 self.io.sockets.emit(
                                     'bodyReceive',
@@ -179,13 +183,22 @@ define(['PhaserWrapper', 'Ship', 'GameLogic', 'GameEvent', 'TimedQueue'], functi
                             case 'joinGame':
                                 var ship = new Ship(event.data.socket.id, self.game, -GameLogic.worldSize/4, GameLogic.worldSize/4);
                                 self.ships.push(ship);
-                                console.log('joinOk: ' + event.data.socket.id);
+                                //console.log('joinOk: ' + event.data.socket.id);
 
                                 event.data.ts += GameLogic.clientPhysicsDelayMs;
 
                                 var shipsInfo = self.ships.map(Ship.getInfo);
                                 event.data.socket.emit('joinOk', {ships: shipsInfo, ts: event.data.ts});
                                 event.data.socket.broadcast.emit('playerListChange', {ships: shipsInfo, ts: event.data.ts});
+
+                                break;
+
+                            case 'disconnect':
+                                //console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(self.game.time.time + GameLogic.clientPhysicsDelayMs));
+
+                                event.data.ts += GameLogic.clientPhysicsDelayMs;
+
+                                GameLogic.forElementWithId(self.ships, event.data.socket.id, GameLogic.returnDisconnectCallback(self.ships, event));
 
                                 break;
 

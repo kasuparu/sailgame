@@ -284,7 +284,7 @@ define(['Phaser'], function (Phaser) {
                 ship.setInfo(serverShips[i]);
 
                 selfShips.push(ship);
-                console.log('adding ship ' + ship.id);
+                //console.log('adding ship ' + ship.id);
 
                 GameLogic.forElementWithId(shipsToDelete, ship.id, removeElement);
             }
@@ -293,7 +293,7 @@ define(['Phaser'], function (Phaser) {
         // Delete all shipsToDelete left
         shipsToDelete.forEach(function (shipToDelete) {
             GameLogic.forElementWithId(selfShips, shipToDelete.id, function (ship, index) {
-                console.log('removing ship ' + ship.id);
+                //console.log('removing ship ' + ship.id);
                 selfShips.splice(index, 1);
             });
         });
@@ -318,9 +318,9 @@ define(['Phaser'], function (Phaser) {
         return function () {
             event.data.socket.get('averagePingMs', function (err, averagePingMs) {
                 var sentTs = timestamp - averagePingMs;
-                console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(sentTs));
+                //console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(sentTs));
                 var serverApplyTs = sentTs + GameLogic.clientPhysicsDelayMs;
-                console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(serverApplyTs + GameLogic.clientPhysicsDelayMs));
+                //console.log('Client ' + event.type + ' est @ ' + GameLogic.timestampShortened(serverApplyTs + GameLogic.clientPhysicsDelayMs));
                 event.data.ts = serverApplyTs;
             });
         };
@@ -354,10 +354,10 @@ define(['Phaser'], function (Phaser) {
      */
     GameLogic.returnDisconnectCallback = function (selfShips, event) {
         return function (ship, index) {
-            console.log('disconnect: ' + ship.id);
+            //console.log('disconnect: ' + ship.id);
             selfShips.splice(index, 1);
 
-            event.data.socket.broadcast.emit('playerListChange', {ships: selfShips.map(GameLogic.getShipInfo)});
+            event.data.socket.broadcast.emit('playerListChange', {ships: selfShips.map(GameLogic.getShipInfo), ts: event.data.ts});
         };
     };
 
@@ -385,8 +385,8 @@ define(['Phaser'], function (Phaser) {
             'rotation': ship.shipBody.rotation,
             'currentSpeed': ship.currentSpeed,
             'velocity': {'x': ship.shipBody.body.velocity.x, 'y': ship.shipBody.body.velocity.y},
-            'targetRotation': ship.targetRotation,
-            'sailState': ship.sailState,
+            'targetRotation': ship.controls.targetRotation,
+            'sailState': ship.controls.sailState,
             'ts': Date.now()
         };
     };
@@ -399,7 +399,7 @@ define(['Phaser'], function (Phaser) {
      */
     GameLogic.returnSetCamera = function (game) {
         return function (playerShip) {
-            console.log('player ship added: ' + playerShip.id);
+            //console.log('player ship added: ' + playerShip.id);
             game.camera.follow(playerShip.shipBody);
             game.camera.focusOnXY(-GameLogic.worldSize/4, GameLogic.worldSize/4);
         };
